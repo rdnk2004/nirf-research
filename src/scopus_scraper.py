@@ -9,8 +9,12 @@ doesn't lose completed work.
 
 Input:
     output/af_id_candidates.csv, after you've manually put "yes" in the
-    `confirmed` column for the correct AF-ID per institution (see
-    affiliation_lookup.py's output).
+    `confirmed` column for the correct affilname per institution (see
+    affiliation_lookup.py's output). Despite the filename, this holds
+    affilname strings, not numeric AF-IDs -- Scopus's numeric AF-ID isn't
+    available at this key's access tier, confirmed by inspecting a real
+    API response, so this pipeline matches institutions by their exact
+    Scopus affiliation-name string instead (AFFIL("...") queries).
 
 Output:
     output/scopus_raw_documents.csv   -- one row per paper
@@ -68,19 +72,19 @@ def load_confirmed_affiliations(path: str) -> dict:
         for row in csv.DictReader(f):
             if row.get("confirmed", "").strip().lower() == "yes":
                 mapping[row["institute_id"]] = {
-                    "af_id": row["af_id"],
+                    "affilname": row["affilname"],
                     "name": row["nirf_name"],
                 }
     return mapping
 
 
-def fetch_page(af_id: str, year: int, start: int, cache_key: str) -> dict | None:
+def fetch_page(affilname: str, year: int, start: int, cache_key: str) -> dict | None:
     cache_path = CACHE_DIR / f"{cache_key}.json"
     if cache_path.exists():
         return json.loads(cache_path.read_text(encoding="utf-8"))
 
     time.sleep(BASE_DELAY)
-    query = f"AF-ID({af_id}) AND PUBYEAR = {year}"
+    query = f'AFFIL("{affilname}") AND PUBYEAR = {year}'
     try:
         resp = requests.get(
             "https://api.elsevier.com/content/search/scopus",
@@ -99,7 +103,7 @@ def fetch_page(af_id: str, year: int, start: int, cache_key: str) -> dict | None
     if resp.status_code == 429:
         print("    Rate limited -- waiting 30s...")
         time.sleep(30)
-        return fetch_page(af_id, year, start, cache_key)  # retry once after backoff
+        return fetch_page(affilname, year, start, cache_key)  # retry once after backoff
 
     if resp.status_code != 200:
         print(f"    HTTP {resp.status_code}: {resp.text[:200]}")

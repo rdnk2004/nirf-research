@@ -1,20 +1,32 @@
 """
-Step 1 of the Scopus pipeline: find each university's Scopus AF-ID.
+Step 1 of the Scopus pipeline: find each university's canonical Scopus
+affiliation name.
 
-IMPORTANT: this does NOT call the separate Affiliation Search API. A first
-version did, and it returned 401 AUTHORIZATION_ERROR -- that endpoint is
-gated separately from the core Scopus Search API and isn't covered by this
-key's entitlement, even though Search itself works fine. Instead, this
-searches AFFIL("<name>") against the Search API and counts which AF-ID
-appears most often across a sample of real matching documents.
+IMPORTANT -- two things this does NOT do, and why:
+  1. It does NOT call the separate Affiliation Search API. A first version
+     did, and got 401 AUTHORIZATION_ERROR -- that endpoint isn't covered
+     by this key's entitlement.
+  2. It does NOT use Scopus's numeric AF-ID. A second version tried to
+     read "afid" out of each document's affiliation object, but the
+     actual API response at this access tier has NO afid field --
+     confirmed by inspecting a real response (test_response.json), which
+     only contains affilname / affiliation-city / affiliation-country.
+     Chasing the ID further would mean requesting view=COMPLETE, which
+     risks the same entitlement wall as the Affiliation Search API.
 
-This does NOT auto-pick an AF-ID -- Indian universities frequently have
-multiple Scopus affiliation records (main campus vs. constituent colleges,
-old vs. renamed entities, sometimes genuine duplicates in Scopus's own
-data). Picking the wrong one silently corrupts every downstream number.
-This script surfaces up to 5 candidates per institution with enough
-context (name, city, country, how often it appeared in the sample) for
-you to confirm the right one by hand.
+Instead: this searches AFFIL("<name>") against the Search API (confirmed
+working) and finds the most common affilname/city/country string Scopus
+actually uses for that institution across a sample of real documents.
+That affilname string IS the stable identifier for this pipeline --
+scopus_scraper.py queries with AFFIL("<confirmed affilname>") instead of
+AF-ID(...).
+
+This does NOT auto-pick a name -- Indian universities frequently have
+multiple Scopus affiliation strings in circulation (main campus vs.
+constituent colleges, old vs. renamed entities). Picking the wrong one
+silently corrupts every downstream number. This script surfaces up to 5
+candidates per institution with enough context (name, city, country, how
+often it appeared in the sample) for you to confirm the right one by hand.
 
 Input:
     A CSV with at least: institute_id, name (or name_canonical)
@@ -78,7 +90,7 @@ def search_affiliation(name: str, retries: int = 3) -> list[dict]:
 
         if resp.status_code == 200:
             entries = resp.json().get("search-results", {}).get("entry", [])
-            af_counter = {}  # af_id -> {"name":..., "city":..., "country":..., "count": N}
+            af_counter = {}  # (affilname, city, country) -> count
             for e in entries:
                 if "error" in e:
                     continue
@@ -86,29 +98,23 @@ def search_affiliation(name: str, retries: int = 3) -> list[dict]:
                 if isinstance(affs, dict):  # sometimes a single dict instead of a list
                     affs = [affs]
                 for aff in affs:
-                    af_id = aff.get("afid", "")
-                    if not af_id:
+                    affilname = aff.get("affilname", "")
+                    if not affilname:
                         continue
-                    if af_id not in af_counter:
-                        af_counter[af_id] = {
-                            "af_name": aff.get("affilname", ""),
-                            "city": aff.get("affiliation-city", ""),
-                            "country": aff.get("affiliation-country", ""),
-                            "count": 0,
-                        }
-                    af_counter[af_id]["count"] += 1
+                    key = (affilname, aff.get("affiliation-city", ""), aff.get("affiliation-country", ""))
+                    af_counter[key] = af_counter.get(key, 0) + 1
 
-            # rank by how often this AF-ID showed up among matching documents
-            ranked = sorted(af_counter.items(), key=lambda kv: -kv[1]["count"])
+            # rank by how often this exact affilname/city/country combo
+            # showed up among matching documents
+            ranked = sorted(af_counter.items(), key=lambda kv: -kv[1])
             candidates = [
                 {
-                    "af_id": af_id,
-                    "af_name": info["af_name"],
-                    "city": info["city"],
-                    "country": info["country"],
-                    "doc_count": f"{info['count']}/{len(entries)} sampled docs",
+                    "affilname": affilname,
+                    "city": city,
+                    "country": country,
+                    "doc_count": f"{count}/{len(entries)} sampled docs",
                 }
-                for af_id, info in ranked[:5]
+                for (affilname, city, country), count in ranked[:5]
             ]
             return candidates
         elif resp.status_code == 429:
@@ -148,14 +154,14 @@ def main(input_csv: str):
             print(f"  NO CANDIDATES FOUND -- will need a manual search on scopus.com for this one")
             rows_out.append({
                 "institute_id": institute_id, "nirf_name": name,
-                "af_id": "", "af_name": "NOT FOUND -- search manually",
+                "affilname": "NOT FOUND -- search manually",
                 "city": "", "country": "", "doc_count": "", "confirmed": "",
             })
         else:
             for c in candidates:
                 rows_out.append({
                     "institute_id": institute_id, "nirf_name": name,
-                    "af_id": c["af_id"], "af_name": c["af_name"],
+                    "affilname": c["affilname"],
                     "city": c["city"], "country": c["country"],
                     "doc_count": c["doc_count"], "confirmed": "",
                 })
@@ -163,7 +169,7 @@ def main(input_csv: str):
 
     with open(OUTPUT_PATH, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=[
-            "institute_id", "nirf_name", "af_id", "af_name",
+            "institute_id", "nirf_name", "affilname",
             "city", "country", "doc_count", "confirmed",
         ])
         writer.writeheader()
@@ -176,7 +182,8 @@ def main(input_csv: str):
     print("  (city/country/doc_count help you tell them apart) and type 'yes'")
     print("  in the 'confirmed' column for the correct one. Leave the rest blank.")
     print("  Rows marked 'NOT FOUND' need a manual lookup at scopus.com --")
-    print("  search Organizations there, find the right AF-ID, add it as a")
+    print("  search Documents there for the institution, open a result, and")
+    print("  copy the exact affiliation name string shown, add it as a")
     print("  new row with confirmed='yes'.")
 
 
