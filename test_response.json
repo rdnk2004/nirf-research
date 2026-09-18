@@ -1,0 +1,405 @@
+{
+  "search-results": {
+    "opensearch:totalResults": "5648",
+    "opensearch:startIndex": "0",
+    "opensearch:itemsPerPage": "5",
+    "opensearch:Query": {
+      "@role": "request",
+      "@searchTerms": "AFFIL(\"Indian Institute of Science\") AND PUBYEAR = 2023",
+      "@startPage": "0"
+    },
+    "link": [
+      {
+        "@_fa": "true",
+        "@ref": "self",
+        "@href": "https://api.elsevier.com/content/search/scopus?start=0&count=5&query=AFFIL%28%22Indian+Institute+of+Science%22%29+AND+PUBYEAR+%3D+2023&view=STANDARD",
+        "@type": "application/json"
+      },
+      {
+        "@_fa": "true",
+        "@ref": "first",
+        "@href": "https://api.elsevier.com/content/search/scopus?start=0&count=5&query=AFFIL%28%22Indian+Institute+of+Science%22%29+AND+PUBYEAR+%3D+2023&view=STANDARD",
+        "@type": "application/json"
+      },
+      {
+        "@_fa": "true",
+        "@ref": "next",
+        "@href": "https://api.elsevier.com/content/search/scopus?start=5&count=5&query=AFFIL%28%22Indian+Institute+of+Science%22%29+AND+PUBYEAR+%3D+2023&view=STANDARD",
+        "@type": "application/json"
+      },
+      {
+        "@_fa": "true",
+        "@ref": "last",
+        "@href": "https://api.elsevier.com/content/search/scopus?start=4995&count=5&query=AFFIL%28%22Indian+Institute+of+Science%22%29+AND+PUBYEAR+%3D+2023&view=STANDARD",
+        "@type": "application/json"
+      }
+    ],
+    "entry": [
+      {
+        "@_fa": "true",
+        "link": [
+          {
+            "@_fa": "true",
+            "@ref": "self",
+            "@href": "https://api.elsevier.com/content/abstract/scopus_id/85170426253"
+          },
+          {
+            "@_fa": "true",
+            "@ref": "author-affiliation",
+            "@href": "https://api.elsevier.com/content/abstract/scopus_id/85170426253?field=author,affiliation"
+          },
+          {
+            "@_fa": "true",
+            "@ref": "scopus",
+            "@href": "https://www.scopus.com/inward/record.uri?partnerID=HzOxMe3b&scp=85170426253&origin=inward"
+          },
+          {
+            "@_fa": "true",
+            "@ref": "scopus-citedby",
+            "@href": "https://www.scopus.com/inward/citedby.uri?partnerID=HzOxMe3b&scp=85170426253&origin=inward"
+          },
+          {
+            "@_fa": "true",
+            "@ref": "full-text",
+            "@href": "https://api.elsevier.com/content/article/eid/1-s2.0-S014181302303605X"
+          }
+        ],
+        "prism:url": "https://api.elsevier.com/content/abstract/scopus_id/85170426253",
+        "dc:identifier": "SCOPUS_ID:85170426253",
+        "eid": "2-s2.0-85170426253",
+        "dc:title": "The Royal Armoury: Venomics and antivenomics of king cobra (Ophiophagus hannah) from the Indian Western Ghats",
+        "dc:creator": "Jaglan A.",
+        "prism:publicationName": "International Journal of Biological Macromolecules",
+        "prism:issn": "01418130",
+        "prism:eIssn": "18790003",
+        "prism:volume": "253",
+        "prism:pageRange": null,
+        "prism:coverDate": "2023-12-31",
+        "prism:coverDisplayDate": "31 December 2023",
+        "prism:doi": "10.1016/j.ijbiomac.2023.126708",
+        "pii": "S014181302303605X",
+        "citedby-count": "9",
+        "affiliation": [
+          {
+            "@_fa": "true",
+            "affilname": "Indian Institute of Science",
+            "affiliation-city": "Bengaluru",
+            "affiliation-country": "India"
+          }
+        ],
+        "pubmed-id": "37673142",
+        "prism:aggregationType": "Journal",
+        "subtype": "ar",
+        "subtypeDescription": "Article",
+        "article-number": "126708",
+        "source-id": "17544",
+        "openaccess": "0",
+        "openaccessFlag": false
+      },
+      {
+        "@_fa": "true",
+        "link": [
+          {
+            "@_fa": "true",
+            "@ref": "self",
+            "@href": "https://api.elsevier.com/content/abstract/scopus_id/85177047566"
+          },
+          {
+            "@_fa": "true",
+            "@ref": "author-affiliation",
+            "@href": "https://api.elsevier.com/content/abstract/scopus_id/85177047566?field=author,affiliation"
+          },
+          {
+            "@_fa": "true",
+            "@ref": "scopus",
+            "@href": "https://www.scopus.com/inward/record.uri?partnerID=HzOxMe3b&scp=85177047566&origin=inward"
+          },
+          {
+            "@_fa": "true",
+            "@ref": "scopus-citedby",
+            "@href": "https://www.scopus.com/inward/citedby.uri?partnerID=HzOxMe3b&scp=85177047566&origin=inward"
+          }
+        ],
+        "prism:url": "https://api.elsevier.com/content/abstract/scopus_id/85177047566",
+        "dc:identifier": "SCOPUS_ID:85177047566",
+        "eid": "2-s2.0-85177047566",
+        "dc:title": "Local momentum space: scalar field and gravity",
+        "dc:creator": "Panda S.",
+        "prism:publicationName": "Classical and Quantum Gravity",
+        "prism:issn": "02649381",
+        "prism:eIssn": "13616382",
+        "prism:volume": "40",
+        "prism:issueIdentifier": "23",
+        "prism:pageRange": null,
+        "prism:coverDate": "2023-12-30",
+        "prism:coverDisplayDate": "30 December 2023",
+        "prism:doi": "10.1088/1361-6382/ad04b2",
+        "citedby-count": "2",
+        "affiliation": [
+          {
+            "@_fa": "true",
+            "affilname": "Indian Institute of Science Education and Research Bhopal",
+            "affiliation-city": "Bhopal",
+            "affiliation-country": "India"
+          }
+        ],
+        "prism:aggregationType": "Journal",
+        "subtype": "ar",
+        "subtypeDescription": "Article",
+        "article-number": "235001",
+        "source-id": "27433",
+        "openaccess": "1",
+        "openaccessFlag": true,
+        "freetoread": {
+          "value": [
+            {
+              "$": "all"
+            },
+            {
+              "$": "publisherhybridgold"
+            }
+          ]
+        },
+        "freetoreadLabel": {
+          "value": [
+            {
+              "$": "All Open Access"
+            },
+            {
+              "$": "Hybrid Gold"
+            }
+          ]
+        }
+      },
+      {
+        "@_fa": "true",
+        "link": [
+          {
+            "@_fa": "true",
+            "@ref": "self",
+            "@href": "https://api.elsevier.com/content/abstract/scopus_id/85186873270"
+          },
+          {
+            "@_fa": "true",
+            "@ref": "author-affiliation",
+            "@href": "https://api.elsevier.com/content/abstract/scopus_id/85186873270?field=author,affiliation"
+          },
+          {
+            "@_fa": "true",
+            "@ref": "scopus",
+            "@href": "https://www.scopus.com/inward/record.uri?partnerID=HzOxMe3b&scp=85186873270&origin=inward"
+          },
+          {
+            "@_fa": "true",
+            "@ref": "scopus-citedby",
+            "@href": "https://www.scopus.com/inward/citedby.uri?partnerID=HzOxMe3b&scp=85186873270&origin=inward"
+          }
+        ],
+        "prism:url": "https://api.elsevier.com/content/abstract/scopus_id/85186873270",
+        "dc:identifier": "SCOPUS_ID:85186873270",
+        "eid": "2-s2.0-85186873270",
+        "dc:title": "W boson mass in singlet-triplet scotogenic dark matter model",
+        "dc:creator": "Batra A.",
+        "prism:publicationName": "International Journal of Modern Physics A",
+        "prism:issn": "0217751X",
+        "prism:eIssn": "1793656X",
+        "prism:volume": "38",
+        "prism:issueIdentifier": "35-36",
+        "prism:pageRange": null,
+        "prism:coverDate": "2023-12-30",
+        "prism:coverDisplayDate": "30 December 2023",
+        "prism:doi": "10.1142/S0217751X23400031",
+        "citedby-count": "2",
+        "affiliation": [
+          {
+            "@_fa": "true",
+            "affilname": "Indian Institute of Science Education and Research Bhopal",
+            "affiliation-city": "Bhopal",
+            "affiliation-country": "India"
+          }
+        ],
+        "prism:aggregationType": "Journal",
+        "subtype": "ar",
+        "subtypeDescription": "Article",
+        "article-number": "2340003",
+        "source-id": "28073",
+        "openaccess": "0",
+        "openaccessFlag": false
+      },
+      {
+        "@_fa": "true",
+        "link": [
+          {
+            "@_fa": "true",
+            "@ref": "self",
+            "@href": "https://api.elsevier.com/content/abstract/scopus_id/85176917061"
+          },
+          {
+            "@_fa": "true",
+            "@ref": "author-affiliation",
+            "@href": "https://api.elsevier.com/content/abstract/scopus_id/85176917061?field=author,affiliation"
+          },
+          {
+            "@_fa": "true",
+            "@ref": "scopus",
+            "@href": "https://www.scopus.com/inward/record.uri?partnerID=HzOxMe3b&scp=85176917061&origin=inward"
+          },
+          {
+            "@_fa": "true",
+            "@ref": "scopus-citedby",
+            "@href": "https://www.scopus.com/inward/citedby.uri?partnerID=HzOxMe3b&scp=85176917061&origin=inward"
+          },
+          {
+            "@_fa": "true",
+            "@ref": "full-text",
+            "@href": "https://api.elsevier.com/content/article/eid/1-s2.0-S0264938123003672"
+          }
+        ],
+        "prism:url": "https://api.elsevier.com/content/abstract/scopus_id/85176917061",
+        "dc:identifier": "SCOPUS_ID:85176917061",
+        "eid": "2-s2.0-85176917061",
+        "dc:title": "Waves in a forest: a random forest classifier to distinguish between gravitational waves and detector glitches",
+        "dc:creator": "Shah N.",
+        "prism:publicationName": "Classical and Quantum Gravity",
+        "prism:issn": "02649381",
+        "prism:eIssn": "13616382",
+        "prism:volume": "40",
+        "prism:issueIdentifier": "23",
+        "prism:pageRange": null,
+        "prism:coverDate": "2023-12-30",
+        "prism:coverDisplayDate": "30 December 2023",
+        "prism:doi": "10.1088/1361-6382/ad0424",
+        "citedby-count": "3",
+        "affiliation": [
+          {
+            "@_fa": "true",
+            "affilname": "The University of British Columbia",
+            "affiliation-city": "Vancouver",
+            "affiliation-country": "Canada"
+          },
+          {
+            "@_fa": "true",
+            "affilname": "Indian Institute of Science Education and Research Pune",
+            "affiliation-city": "Pune",
+            "affiliation-country": "India"
+          }
+        ],
+        "prism:aggregationType": "Journal",
+        "subtype": "ar",
+        "subtypeDescription": "Article",
+        "article-number": "235008",
+        "source-id": "27433",
+        "openaccess": "1",
+        "openaccessFlag": true,
+        "freetoread": {
+          "value": [
+            {
+              "$": "all"
+            },
+            {
+              "$": "publisherhybridgold"
+            }
+          ]
+        },
+        "freetoreadLabel": {
+          "value": [
+            {
+              "$": "All Open Access"
+            },
+            {
+              "$": "Hybrid Gold"
+            }
+          ]
+        }
+      },
+      {
+        "@_fa": "true",
+        "link": [
+          {
+            "@_fa": "true",
+            "@ref": "self",
+            "@href": "https://api.elsevier.com/content/abstract/scopus_id/85167406119"
+          },
+          {
+            "@_fa": "true",
+            "@ref": "author-affiliation",
+            "@href": "https://api.elsevier.com/content/abstract/scopus_id/85167406119?field=author,affiliation"
+          },
+          {
+            "@_fa": "true",
+            "@ref": "scopus",
+            "@href": "https://www.scopus.com/inward/record.uri?partnerID=HzOxMe3b&scp=85167406119&origin=inward"
+          },
+          {
+            "@_fa": "true",
+            "@ref": "scopus-citedby",
+            "@href": "https://www.scopus.com/inward/citedby.uri?partnerID=HzOxMe3b&scp=85167406119&origin=inward"
+          },
+          {
+            "@_fa": "true",
+            "@ref": "full-text",
+            "@href": "https://api.elsevier.com/content/article/eid/1-s2.0-S0957417423015713"
+          }
+        ],
+        "prism:url": "https://api.elsevier.com/content/abstract/scopus_id/85167406119",
+        "dc:identifier": "SCOPUS_ID:85167406119",
+        "eid": "2-s2.0-85167406119",
+        "dc:title": "Open problems in causal structure learning: A case study of COVID-19 in the UK",
+        "dc:creator": "Constantinou A.",
+        "prism:publicationName": "Expert Systems with Applications",
+        "prism:issn": "09574174",
+        "prism:volume": "234",
+        "prism:pageRange": null,
+        "prism:coverDate": "2023-12-30",
+        "prism:coverDisplayDate": "30 December 2023",
+        "prism:doi": "10.1016/j.eswa.2023.121069",
+        "pii": "S0957417423015713",
+        "citedby-count": "26",
+        "affiliation": [
+          {
+            "@_fa": "true",
+            "affilname": "Queen Mary University of London",
+            "affiliation-city": "London",
+            "affiliation-country": "United Kingdom"
+          }
+        ],
+        "prism:aggregationType": "Journal",
+        "subtype": "ar",
+        "subtypeDescription": "Article",
+        "article-number": "121069",
+        "source-id": "24201",
+        "openaccess": "1",
+        "openaccessFlag": true,
+        "freetoread": {
+          "value": [
+            {
+              "$": "all"
+            },
+            {
+              "$": "publisherhybridgold"
+            },
+            {
+              "$": "repository"
+            },
+            {
+              "$": "repositoryam"
+            }
+          ]
+        },
+        "freetoreadLabel": {
+          "value": [
+            {
+              "$": "All Open Access"
+            },
+            {
+              "$": "Hybrid Gold"
+            },
+            {
+              "$": "Green"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

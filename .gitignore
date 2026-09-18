@@ -1,0 +1,9 @@
+# Never commit real credentials
+.env
+ 
+# Scraper cache/output (regeneratable -- don't bloat the repo with it,
+# unless you specifically want the data versioned)
+cache/
+__pycache__/
+*.pyc
+ 
