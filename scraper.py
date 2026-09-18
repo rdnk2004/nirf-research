@@ -73,15 +73,39 @@ OUTPUT_DIR = Path("output")
 CSV_PATH = OUTPUT_DIR / "nirf_university_raw.csv"
 FAIL_LOG_PATH = OUTPUT_DIR / "parse_failures.log"
 
+# Used to correctly split "New Delhi Delhi" into city="New Delhi",
+# state="Delhi" -- NIRF's listing text has no separator between city and
+# state, so a naive "last word is the state" split breaks on any
+# multi-word city name. Matching against real state names fixes it.
+INDIAN_STATES_UTS = sorted([
+    "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa",
+    "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala",
+    "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland",
+    "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura",
+    "Uttar Pradesh", "Uttarakhand", "West Bengal", "Andaman and Nicobar Islands",
+    "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu", "Delhi",
+    "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry",
+], key=len, reverse=True)
+
 # Rank-band suffixes NIRF uses to paginate a category's listing.
 # The scraper stops once a page 404s or returns zero new institutions,
 # so listing more than you need here is harmless.
 PAGE_SUFFIXES = ["", "150", "200", "300", "400", "500"]
 
-CSV_FIELDS = [
+# Fields that come ONLY from the listing page. parse_institution_pdf must
+# never initialize or touch these -- a prior version of this script
+# initialized ALL fields (including these) to None inside
+# parse_institution_pdf, and row.update(parsed) then silently overwrote
+# the real listing data with those Nones. That bug is why an earlier run
+# produced a CSV with blank year/institute_id/scores for every row.
+LISTING_FIELDS = [
     "year", "institute_id", "name", "city", "state",
     "tlr_score", "rpc_score", "go_score", "oi_score", "pr_score",
-    "overall_score", "rank",
+    "overall_score", "rank", "pdf_url",
+]
+
+# Fields that come ONLY from the individual institution PDF.
+PDF_FIELDS = [
     "faculty_count",
     "phd_fulltime_current", "phd_parttime_current",
     "phd_graduated_fulltime_y1", "phd_graduated_parttime_y1",
@@ -90,8 +114,10 @@ CSV_FIELDS = [
     "sponsored_projects_y1", "sponsored_projects_y2", "sponsored_projects_y3",
     "sponsored_funding_agencies_y1", "sponsored_funding_agencies_y2", "sponsored_funding_agencies_y3",
     "sponsored_amount_y1", "sponsored_amount_y2", "sponsored_amount_y3",
-    "pdf_url", "parse_status", "faculty_section_raw",
+    "parse_status", "faculty_section_raw",
 ]
+
+CSV_FIELDS = LISTING_FIELDS + PDF_FIELDS
 
 logging.basicConfig(
     level=logging.INFO,
@@ -216,12 +242,26 @@ def parse_listing_html(html: bytes, year: int, category: str) -> list[dict]:
         name_match = re.search(r"IR-[A-Z]-[A-Z]-\d+\s*\|?\s*([A-Za-z][^|]{3,120}?)\s*(?:\[|More Details)", text_blob)
         name = name_match.group(1).strip() if name_match else pdf_link.get_text(strip=True) or None
 
-        # City/State: two Title-Case-ish tokens right before the overall score
+        # City/State: NIRF renders this as one unbroken string, e.g.
+        # "New Delhi Delhi" (city="New Delhi", state="Delhi") or
+        # "Bengaluru Karnataka". Match a known state name at the end of
+        # the segment rather than guessing from word count -- see
+        # INDIAN_STATES_UTS above.
         city = state = None
         if overall:
-            loc_match = re.search(r"([A-Za-z .]+?)\s+([A-Za-z .]+?)\s+" + re.escape(overall), text_blob)
-            if loc_match:
-                city, state = loc_match.group(1).strip(), loc_match.group(2).strip()
+            seg_match = re.search(r"\d{1,3}\.\d{2}\s+([A-Za-z][A-Za-z .]+?)\s+" + re.escape(overall), text_blob)
+            if seg_match:
+                segment = seg_match.group(1).strip()
+                for st in INDIAN_STATES_UTS:
+                    if segment.endswith(st):
+                        state = st
+                        city = segment[:-len(st)].strip() or st
+                        break
+                if state is None:
+                    # fallback: last word as state, rest as city (best effort
+                    # if a state/UT name isn't in the list above)
+                    parts = segment.rsplit(" ", 1)
+                    city, state = (parts[0], parts[1]) if len(parts) == 2 else (segment, None)
 
         if institute_id:
             rows.append({
@@ -293,7 +333,9 @@ def parse_institution_pdf(pdf_path: Path) -> dict:
     regardless so nothing is silently lost (see the module docstring's
     KNOWN LIMITATION note).
     """
-    result = {f: None for f in CSV_FIELDS}
+    # Only initialize the fields this function is responsible for -- never
+    # LISTING_FIELDS. See the comment above PDF_FIELDS for why this matters.
+    result = {f: None for f in PDF_FIELDS}
     result["parse_status"] = "ok"
 
     try:
