@@ -153,14 +153,14 @@ def already_done_institute_years() -> set:
     return done
 
 
-def pull_institute_year(institute_id: str, af_id: str, year: int):
+def pull_institute_year(institute_id: str, affilname: str, year: int):
     all_entries = []
     start = 0
     total_results = None
 
     while True:
         cache_key = f"{institute_id}_{year}_{start}"
-        data = fetch_page(af_id, year, start, cache_key)
+        data = fetch_page(affilname, year, start, cache_key)
         if data is None:
             with open(FAIL_LOG, "a", encoding="utf-8") as f:
                 f.write(f"{institute_id}\t{year}\tstart={start}\tfetch_failed\n")
@@ -226,8 +226,8 @@ def main(years: list[int], affiliation_csv: str):
         for year in years:
             if (institute_id, str(year)) in done:
                 continue
-            print(f"[{info['name']}] {year} (AF-ID {info['af_id']})")
-            pull_institute_year(institute_id, info["af_id"], year)
+            print(f"[{info['name']}] {year} ({info['affilname']})")
+            pull_institute_year(institute_id, info["affilname"], year)
 
     print(f"\nDone. Per-document data: {DOCS_CSV}")
     print(f"Per-institution-year summary: {SUMMARY_CSV}")
