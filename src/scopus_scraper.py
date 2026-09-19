@@ -145,23 +145,76 @@ def append_rows(path: Path, fieldnames: list, rows: list[dict]):
 
 
 def already_done_institute_years() -> set:
+    """
+    Only counts an institute-year as done if it completed cleanly (no note).
+    A row with a non-empty `note` means a prior run hit a pagination
+    ceiling or a fetch failure and only got partial data -- that should be
+    retried, not silently treated as finished forever.
+    """
     done = set()
     if SUMMARY_CSV.exists():
         with open(SUMMARY_CSV, newline="", encoding="utf-8") as f:
             for row in csv.DictReader(f):
-                done.add((row["institute_id"], row["year"]))
+                if not row.get("note", "").strip():
+                    done.add((row["institute_id"], row["year"]))
     return done
+
+
+def partial_institute_years() -> set:
+    """(institute_id, year) pairs that exist but have a non-empty note --
+    i.e. a previous run only got partial data for them and they need a
+    clean retry, not a silent skip."""
+    partial = set()
+    if SUMMARY_CSV.exists():
+        with open(SUMMARY_CSV, newline="", encoding="utf-8") as f:
+            for row in csv.DictReader(f):
+                if row.get("note", "").strip():
+                    partial.add((row["institute_id"], str(row["year"])))
+    return partial
+
+
+def purge_institute_year(path: Path, fieldnames: list, institute_id: str, year: int, retries: int = 3):
+    """
+    Removes all existing rows for one institute-year from a CSV before a
+    retry re-appends fresh ones -- otherwise a retry after a partial
+    failure would duplicate every row that succeeded the first time
+    around, on top of the freshly (and now hopefully complete) fetched set.
+
+    Retries on OSError: on Windows, a file can be transiently locked by
+    antivirus scanning, OneDrive/cloud sync, or simply being open in
+    Excel -- a brief wait and retry handles this without losing the run.
+    """
+    if not path.exists():
+        return
+    for attempt in range(1, retries + 1):
+        try:
+            with open(path, newline="", encoding="utf-8") as f:
+                rows = [r for r in csv.DictReader(f)
+                        if not (r["institute_id"] == institute_id and str(r["year"]) == str(year))]
+            with open(path, "w", newline="", encoding="utf-8") as f:
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(rows)
+            return
+        except OSError as e:
+            print(f"    File access error on {path.name} (attempt {attempt}/{retries}): {e}")
+            print(f"    If this keeps happening, check whether {path} is open in Excel or")
+            print(f"    another program, or being synced by OneDrive/cloud storage.")
+            time.sleep(2 * attempt)
+    raise OSError(f"Could not access {path} after {retries} attempts -- see messages above.")
 
 
 def pull_institute_year(institute_id: str, affilname: str, year: int):
     all_entries = []
     start = 0
     total_results = None
+    fetch_failed = False
 
     while True:
         cache_key = f"{institute_id}_{year}_{start}"
         data = fetch_page(affilname, year, start, cache_key)
         if data is None:
+            fetch_failed = True
             with open(FAIL_LOG, "a", encoding="utf-8") as f:
                 f.write(f"{institute_id}\t{year}\tstart={start}\tfetch_failed\n")
             break
@@ -195,7 +248,16 @@ def pull_institute_year(institute_id: str, affilname: str, year: int):
     avg_citations = round(total_citations / total_docs, 2) if total_docs else 0
 
     note = ""
-    if total_results and total_results > len(doc_rows):
+    if fetch_failed:
+        # A network/API failure happened during this pull -- even if it hit
+        # on the very first page (so total_results was never confirmed),
+        # this must NOT be left indistinguishable from a genuine
+        # zero-output institution. An empty note here is what caused
+        # earlier connection failures to be silently treated as "done"
+        # forever.
+        note = (f"fetch failed at start={start} -- only {len(doc_rows)}"
+                f"/{total_results if total_results is not None else '?'} retrieved, needs retry")
+    elif total_results and total_results > len(doc_rows):
         note = f"only {len(doc_rows)}/{total_results} retrieved (ceiling or partial failure)"
 
     append_rows(SUMMARY_CSV, SUMMARY_FIELDS, [{
@@ -220,13 +282,25 @@ def main(years: list[int], affiliation_csv: str):
         sys.exit(1)
 
     done = already_done_institute_years()
+    partial = partial_institute_years()
+    if partial:
+        print(f"{len(partial)} institution-years have partial/incomplete data from a "
+              f"previous run and will be retried cleanly (old rows purged first):")
+        for iid, yr in partial:
+            print(f"  - {iid} / {yr}")
+        print()
+
     print(f"{len(affiliations)} confirmed institutions, {len(years)} years.\n")
 
     for institute_id, info in affiliations.items():
         for year in years:
-            if (institute_id, str(year)) in done:
+            key = (institute_id, str(year))
+            if key in done:
                 continue
-            print(f"[{info['name']}] {year} ({info['affilname']})")
+            if key in partial:
+                purge_institute_year(DOCS_CSV, DOC_FIELDS, institute_id, year)
+                purge_institute_year(SUMMARY_CSV, SUMMARY_FIELDS, institute_id, year)
+            print(f"[{info['name']}] {year} (affilname: {info['affilname']})")
             pull_institute_year(institute_id, info["affilname"], year)
 
     print(f"\nDone. Per-document data: {DOCS_CSV}")
@@ -237,12 +311,7 @@ def main(years: list[int], affiliation_csv: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--years", type=int, nargs="+", required=True)
-    default_csv = (
-        "output/af_id_candidates_confirmed.csv"
-        if Path("output/af_id_candidates_confirmed.csv").exists()
-        else "output/af_id_candidates.csv"
-    )
-    parser.add_argument("--affiliations", default=default_csv,
+    parser.add_argument("--affiliations", default="output/af_id_candidates.csv",
                          help="Path to the confirmed AF-ID CSV")
     args = parser.parse_args()
     main(args.years, args.affiliations)

@@ -143,7 +143,7 @@ IR-O-U-0056,Tezpur University,Tezpur University,Tezpur,India,23/25 sampled docs,
 IR-O-U-0056,Tezpur University,Rajiv Gandhi Institute of Petroleum Technology,Amethi,India,1/25 sampled docs,
 IR-O-U-0056,Tezpur University,Jorhat Engineering College,Jorhat,India,1/25 sampled docs,
 IR-O-U-0056,Tezpur University,Mahapurusha Srimanta Sankaradeva Viswavidyalaya,Nagaon,India,1/25 sampled docs,
-IR-O-U-0262,"Mahatma Gandhi University, Kottayam","Mahatma Gandhi University, Kerala",Kottayam,India,15/25 sampled docs,yes
+IR-O-U-0262,"Mahatma Gandhi University, Kottayam","Mahatma Gandhi University, Kerala",Kottayam,India,15/25 sampled docs,
 IR-O-U-0262,"Mahatma Gandhi University, Kottayam",National Institute of Technology Silchar,Silchar,India,2/25 sampled docs,
 IR-O-U-0262,"Mahatma Gandhi University, Kottayam","Amrita University, Amritapuri Campus",Kollam,India,2/25 sampled docs,
 IR-O-U-0262,"Mahatma Gandhi University, Kottayam",Coimbatore Institute of Technology,Coimbatore,India,1/25 sampled docs,
@@ -238,8 +238,8 @@ IR-O-U-0381,"Punjab Agricultural University, Ludhiana","ICAR - Indian Agricultur
 IR-O-U-0381,"Punjab Agricultural University, Ludhiana",Yerevan Physics Institute,Yerevan,Armenia,1/25 sampled docs,
 IR-O-U-0381,"Punjab Agricultural University, Ludhiana",University of Manitoba,Winnipeg,Canada,1/25 sampled docs,
 IR-O-U-0381,"Punjab Agricultural University, Ludhiana",National Institute for Plant Biotechnology,New Delhi,India,1/25 sampled docs,
-IR-O-U-0642,Shiv Nadar University,Shiv Nadar University Chennai,Chennai,India,7/25 sampled docs,yes
-IR-O-U-0642,Shiv Nadar University,Shiv Nadar Institution of Eminence deemed to be University,Greater Noida,India,5/25 sampled docs,
+IR-O-U-0642,Shiv Nadar University,Shiv Nadar University Chennai,Chennai,India,7/25 sampled docs,
+IR-O-U-0642,Shiv Nadar University,Shiv Nadar Institution of Eminence deemed to be University,Greater Noida,India,5/25 sampled docs,yes
 IR-O-U-0642,Shiv Nadar University,"Bipin Tripathi Kumaon Institute of Technology, Dwarahat",Dwarahat,India,2/25 sampled docs,
 IR-O-U-0642,Shiv Nadar University,"SSN College of Engineering, Kalavakkam",Kanchipuram,India,2/25 sampled docs,
 IR-O-U-0642,Shiv Nadar University,"National Institute of Technology, Agartala",Agartala,India,1/25 sampled docs,
@@ -261,7 +261,7 @@ IR-O-U-0329,Symbiosis International,Symbiosis International (Deemed University),
 IR-O-U-0329,Symbiosis International,"Symbiosis Centre for Research and Innovation, Pune",Pune,India,2/25 sampled docs,
 IR-O-U-0329,Symbiosis International,Symbiosis Institute of Health Sciences,Pune,India,2/25 sampled docs,
 IR-O-U-0329,Symbiosis International,Vikrant University Gwalior,Gwalior,India,1/25 sampled docs,
-IR-O-N-10,SVKM`s Narsee Monjee Institute of Management Studies,"Shri Vile Parle Kelvani Mandal’s Narsee Monjee Institute of Management Studies (Deemed to be University), Mumbai",Mumbai,India,7/25 sampled docs,yes
+IR-O-N-10,SVKM`s Narsee Monjee Institute of Management Studies,"Shri Vile Parle Kelvani Mandal’s Narsee Monjee Institute of Management Studies (Deemed to be University), Mumbai",Mumbai,India,7/25 sampled docs,
 IR-O-N-10,SVKM`s Narsee Monjee Institute of Management Studies,Shobhaben Pratapbhai Patel School of Pharmacy & Technology Management,Mumbai,India,5/25 sampled docs,
 IR-O-N-10,SVKM`s Narsee Monjee Institute of Management Studies,SVKM’S NMIMS Shirpur Campus,Shirpur,India,3/25 sampled docs,
 IR-O-N-10,SVKM`s Narsee Monjee Institute of Management Studies,Meerut Institute of Engineering & Technology,Meerut,India,2/25 sampled docs,
@@ -688,3 +688,7 @@ IR-O-U-0105,Indraprastha Institute of Information Technology,Indian Institute of
 IR-O-U-0105,Indraprastha Institute of Information Technology,Zentrum für Regenerative Therapien Dresden,Dresden,Germany,1/25 sampled docs,
 IR-O-U-0105,Indraprastha Institute of Information Technology,Institute for Stem Cell Science and Regenerative Medicine,Bengaluru,India,1/25 sampled docs,
 IR-O-U-0105,Indraprastha Institute of Information Technology,Charles University,Prague,Czech Republic,1/25 sampled docs,
+IR-O-N-10,SVKM`s Narsee Monjee Institute of Management Studies,"Shri Vile Parle Kelvani Mandal's Narsee Monjee Institute of Management Studies (Deemed to be University), Mumbai",Mumbai,India,"MANUAL FIX -- straight apostrophe (original used curly ’, suspected cause of 0 results)",yes
+IR-O-U-0262,"Mahatma Gandhi University, Kottayam",Mahatma Gandhi University,Kottayam,India,"MANUAL FIX -- external tracker shows 6.7K total pubs for this institution; original confirmed name (with "", Kerala"" appended) returned near-zero, suggesting it matched only a rare address variant",yes
+IR-O-U-0487,Tamil Nadu Veterinary & Animal Sciences University,Tamil Nadu Veterinary and Animal Sciences University,Chennai,India,"NEEDS LIVE TEST -- current confirmed name (""Tamilnadu Veterinary Animal Sciences University"", missing ""and"") returned 0 docs. Also consider that this institution may publish mostly under its constituent colleges (Madras Veterinary College, Veterinary College and Research Institute Namakkal/Tirunelveli) rather than the parent university name.",
+IR-O-U-0321,"Padmashree Dr. D. Y. Patil Vidyapeeth, Mumbai",Padmashree Dr. D Y Patil University,Navi Mumbai,India,"NEEDS LIVE TEST -- this is a DIFFERENT entity from the other D.Y. Patil institute_id (IR-O-I-1110, Pune) already confirmed. This one is the Navi Mumbai campus, commonly branded ""Padmashree Dr. D Y Patil University"" -- unverified against live Scopus.",
