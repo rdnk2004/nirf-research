@@ -45,6 +45,7 @@ KNOWN LIMITATION -- read before trusting the faculty-PhD numbers:
 
 import argparse
 import csv
+import json
 import logging
 import re
 import time
@@ -107,6 +108,7 @@ LISTING_FIELDS = [
 # Fields that come ONLY from the individual institution PDF.
 PDF_FIELDS = [
     "faculty_count",
+    "total_student_strength", "student_strength_breakdown",
     "phd_fulltime_current", "phd_parttime_current",
     "phd_graduated_fulltime_y1", "phd_graduated_parttime_y1",
     "phd_graduated_fulltime_y2", "phd_graduated_parttime_y2",
@@ -325,6 +327,46 @@ def _grab_three_year_ints(text: str, label: str) -> tuple:
     return (None, None, None)
 
 
+def extract_student_strength(pdf) -> tuple:
+    """
+    Sums the 'Total Students' column across all program-level rows (UG,
+    PG, PG-Integrated, and any others -- program structures vary a lot
+    between institutions, e.g. UG can be 3/4/5-year, PG can be 1/2/3-year)
+    in the 'Total Actual Student Strength' table.
+
+    Matched by header content (must contain both 'Male' and 'Total
+    Students') rather than by section heading text, because a DIFFERENT
+    table later in the same document (Ph.D student counts) also has a
+    cell literally called 'Total Students' -- matching on the full header
+    row avoids picking up that unrelated table by mistake.
+
+    Returns (total: int|None, breakdown: dict) -- breakdown is kept so the
+    raw per-program-level numbers are never silently lost even though only
+    the total is used for the ratio calculation.
+    """
+    for page in pdf.pages:
+        for table in page.extract_tables():
+            if not table or not table[0]:
+                continue
+            header = table[0]
+            header_text = " ".join(h or "" for h in header)
+            if "Male" in header_text and "Total Students" in header_text:
+                col_idx = next((i for i, h in enumerate(header) if h and "Total Students" in h), None)
+                if col_idx is None:
+                    continue
+                total = 0
+                breakdown = {}
+                for row in table[1:]:
+                    if len(row) > col_idx and row[col_idx] and row[col_idx].strip().isdigit():
+                        program = (row[0] or "").replace("\n", " ").strip()
+                        count = int(row[col_idx])
+                        breakdown[program] = count
+                        total += count
+                if breakdown:  # only return if we actually matched real rows
+                    return total, breakdown
+    return None, {}
+
+
 def parse_institution_pdf(pdf_path: Path) -> dict:
     """
     Extract the fields we care about from one institution's raw-data PDF.
@@ -341,6 +383,10 @@ def parse_institution_pdf(pdf_path: Path) -> dict:
     try:
         with pdfplumber.open(pdf_path) as pdf:
             full_text = "\n".join(page.extract_text() or "" for page in pdf.pages)
+            total_students, breakdown = extract_student_strength(pdf)
+            if total_students is not None:
+                result["total_student_strength"] = total_students
+                result["student_strength_breakdown"] = json.dumps(breakdown)
     except Exception as e:
         result["parse_status"] = f"pdf_open_failed: {e}"
         return result
