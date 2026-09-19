@@ -327,7 +327,7 @@ IR-O-U-0239,NITTE,NGSM Institute of Pharmaceutical Sciences,Mangalore,India,6/25
 IR-O-U-0239,NITTE,Nitte (Deemed to be University),Mangalore,India,6/25 sampled docs,yes
 IR-O-U-0239,NITTE,NMAM Institute of Technology,Udupi,India,4/25 sampled docs,
 IR-O-U-0239,NITTE,National Institute of Technology Karnataka,Mangalore,India,1/25 sampled docs,
-IR-O-U-0487,Tamil Nadu Veterinary and Animal Sciences University,Tamilnadu Veterinary Animal Sciences University,Chennai,India,13/25 sampled docs,yes
+IR-O-U-0487,Tamil Nadu Veterinary and Animal Sciences University,Tamilnadu Veterinary Animal Sciences University,Chennai,India,13/25 sampled docs,
 IR-O-U-0487,Tamil Nadu Veterinary and Animal Sciences University,"Veterinary College and Research Institute, Namakkal",Namakkal,India,6/25 sampled docs,
 IR-O-U-0487,Tamil Nadu Veterinary and Animal Sciences University,"Veterinary College and Research Institute, Tirunelveli",Tirunelveli,India,2/25 sampled docs,
 IR-O-U-0487,Tamil Nadu Veterinary and Animal Sciences University,"Banaras Hindu University, Institute of Medical Sciences",Varanasi,India,1/25 sampled docs,
@@ -613,7 +613,7 @@ IR-O-U-0248,"University of Agricultural Sciences, Bangalore",Jawaharlal Nehru Un
 IR-O-U-0248,"University of Agricultural Sciences, Bangalore",Sher-e-Kashmir University of Agricultural Sciences and Technology of Jammu,Jammu,India,2/25 sampled docs,
 IR-O-U-0248,"University of Agricultural Sciences, Bangalore","College of Agriculture, Padannakkad",Kasaragod,India,2/25 sampled docs,
 IR-O-U-0248,"University of Agricultural Sciences, Bangalore","University of Agricultural Sciences, Dharwad",Dharwad,India,1/25 sampled docs,
-IR-O-U-0155,"Amity University Haryana, Gurgaon",AUH-Gurugram,Gurugram,India,2/7 sampled docs,yes
+IR-O-U-0155,"Amity University Haryana, Gurgaon",AUH-Gurugram,Gurugram,India,2/7 sampled docs,
 IR-O-U-0155,"Amity University Haryana, Gurgaon",Guru Ghasidas Vishwavidyalaya,Bilaspur,India,1/7 sampled docs,
 IR-O-U-0155,"Amity University Haryana, Gurgaon",Berhampur University,Berhampur,India,1/7 sampled docs,
 IR-O-U-0155,"Amity University Haryana, Gurgaon","National Institute of Pharmaceutical Education and Research, Raebareli",Lucknow,India,1/7 sampled docs,
@@ -688,7 +688,10 @@ IR-O-U-0105,Indraprastha Institute of Information Technology,Indian Institute of
 IR-O-U-0105,Indraprastha Institute of Information Technology,Zentrum für Regenerative Therapien Dresden,Dresden,Germany,1/25 sampled docs,
 IR-O-U-0105,Indraprastha Institute of Information Technology,Institute for Stem Cell Science and Regenerative Medicine,Bengaluru,India,1/25 sampled docs,
 IR-O-U-0105,Indraprastha Institute of Information Technology,Charles University,Prague,Czech Republic,1/25 sampled docs,
-IR-O-N-10,SVKM`s Narsee Monjee Institute of Management Studies,"Shri Vile Parle Kelvani Mandal's Narsee Monjee Institute of Management Studies (Deemed to be University), Mumbai",Mumbai,India,"MANUAL FIX -- straight apostrophe (original used curly ’, suspected cause of 0 results)",yes
+IR-O-N-10,SVKM`s Narsee Monjee Institute of Management Studies,"Shri Vile Parle Kelvani Mandal's Narsee Monjee Institute of Management Studies (Deemed to be University), Mumbai",Mumbai,India,"MANUAL FIX -- straight apostrophe (original used curly ’, suspected cause of 0 results)",
 IR-O-U-0262,"Mahatma Gandhi University, Kottayam",Mahatma Gandhi University,Kottayam,India,"MANUAL FIX -- external tracker shows 6.7K total pubs for this institution; original confirmed name (with "", Kerala"" appended) returned near-zero, suggesting it matched only a rare address variant",yes
 IR-O-U-0487,Tamil Nadu Veterinary and Animal Sciences University,Tamil Nadu Veterinary and Animal Sciences University,Chennai,India,"NEEDS LIVE TEST -- current confirmed name (""Tamilnadu Veterinary Animal Sciences University"", missing ""and"") returned 0 docs. Also consider that this institution may publish mostly under its constituent colleges (Madras Veterinary College, Veterinary College and Research Institute Namakkal/Tirunelveli) rather than the parent university name.",
 IR-O-U-0321,"Padmashree Dr. D. Y. Patil Vidyapeeth, Mumbai",Padmashree Dr. D Y Patil University,Navi Mumbai,India,"NEEDS LIVE TEST -- this is a DIFFERENT entity from the other D.Y. Patil institute_id (IR-O-I-1110, Pune) already confirmed. This one is the Navi Mumbai campus, commonly branded ""Padmashree Dr. D Y Patil University"" -- unverified against live Scopus.",
+IR-O-N-10,SVKM`s Narsee Monjee Institute of Management Studies,NMIMS University,Mumbai,India,VERIFIED live -- 146 results for PUBYEAR=2023 (short form works; full legal name variants did not),yes
+IR-O-U-0487,Tamil Nadu Veterinary & Animal Sciences University,Tamil Nadu Veterinary and Animal Sciences University,Chennai,India,VERIFIED live -- 136 results for PUBYEAR=2023,yes
+IR-O-U-0155,"Amity University Haryana, Gurgaon",Amity University Haryana,Gurugram,India,VERIFIED live -- 260 results for PUBYEAR=2023,yes
