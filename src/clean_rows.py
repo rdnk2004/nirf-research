@@ -44,7 +44,12 @@ def find_failed_institute_years() -> set:
     with open(FAIL_LOG, encoding="utf-8") as f:
         for line in f:
             parts = line.strip().split("\t")
-            if len(parts) >= 3 and parts[2] == "fetch_failed":
+            # status is the LAST field, not a fixed index -- lines have
+            # either 3 fields (older format) or 4 (start=N / total=N
+            # prefix before the status), so parts[2] was wrong and never
+            # matched anything. This was silently a no-op in the first
+            # version of this script.
+            if len(parts) >= 2 and parts[-1] == "fetch_failed":
                 failed.add((parts[0], parts[1]))
     return failed
 
@@ -55,6 +60,12 @@ def purge_and_report(path: Path, key_fields: tuple, to_purge: set) -> int:
     with open(path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         fieldnames = reader.fieldnames
+        if not fieldnames or not all(k in fieldnames for k in key_fields):
+            print(f"  WARNING: {path} doesn't have the expected columns "
+                  f"{key_fields} (found: {fieldnames}) -- skipping it. "
+                  f"This can happen if it's a Git LFS pointer file rather "
+                  f"than the real data (check 'git lfs pull' if so).")
+            return 0
         rows = list(reader)
 
     kept = []
@@ -82,34 +93,55 @@ def main():
         print(f"ERROR: {SUMMARY_CSV} not found.")
         return
 
-    # Only purge summary rows that BOTH appear in the fail log AND show
-    # 0 documents with an empty note -- this is the exact signature of
-    # the bug, not a blanket "delete anything with 0 documents" sweep.
     with open(SUMMARY_CSV, newline="", encoding="utf-8") as f:
         summary_rows = list(csv.DictReader(f))
 
-    confirmed_bad = set()
-    for r in summary_rows:
-        key = (r["institute_id"], r["year"])
-        if (key in failed_keys
-                and r.get("total_documents", "0") == "0"
-                and not r.get("note", "").strip()):
-            confirmed_bad.add(key)
+    zero_blank = [
+        r for r in summary_rows
+        if r.get("total_documents", "0") == "0" and not r.get("note", "").strip()
+    ]
 
-    print(f"Of those, {len(confirmed_bad)} match the bug's exact signature "
-          f"(0 documents, empty note) and will be purged for retry:")
-    for iid, yr in sorted(confirmed_bad):
+    # Category 1: confirmed by the fail log as a genuine network/API failure.
+    confirmed_failures = {
+        (r["institute_id"], r["year"]) for r in zero_blank
+        if (r["institute_id"], r["year"]) in failed_keys
+    }
+
+    # Category 2: 0 documents, empty note, but NOT in the fail log at all.
+    # This is the signature of a query that technically succeeded but used
+    # a since-corrected affilname (the query itself returned a real "zero
+    # results" answer at the time, for the wrong institution string).
+    # Retrying is safe either way: if the name is now correct, it'll pull
+    # real data; if the row was always a genuine small/zero-output year,
+    # retrying just reconfirms the same result at the cost of one query.
+    stale_or_unclear = {
+        (r["institute_id"], r["year"]) for r in zero_blank
+        if (r["institute_id"], r["year"]) not in failed_keys
+    }
+
+    print(f"Category 1 -- confirmed network/API failures ({len(confirmed_failures)}):")
+    for iid, yr in sorted(confirmed_failures):
         print(f"  - {iid} / {yr}")
 
-    if not confirmed_bad:
+    print(f"\nCategory 2 -- zero/blank but NOT in fail log, likely stale pre-fix "
+          f"queries or genuine small output ({len(stale_or_unclear)}):")
+    for iid, yr in sorted(stale_or_unclear):
+        print(f"  - {iid} / {yr}")
+
+    to_purge = confirmed_failures | stale_or_unclear
+    if not to_purge:
         print("\nNothing to clean up.")
         return
 
-    n1 = purge_and_report(SUMMARY_CSV, ("institute_id", "year"), confirmed_bad)
-    n2 = purge_and_report(DOCS_CSV, ("institute_id", "year"), confirmed_bad)
-    print(f"\nPurged {n1} rows from {SUMMARY_CSV}")
+    print(f"\nPurging {len(to_purge)} rows total for retry...")
+    n1 = purge_and_report(SUMMARY_CSV, ("institute_id", "year"), to_purge)
+    n2 = purge_and_report(DOCS_CSV, ("institute_id", "year"), to_purge)
+    print(f"Purged {n1} rows from {SUMMARY_CSV}")
     print(f"Purged {n2} rows from {DOCS_CSV}")
     print("\nNext run of scopus_scraper.py will retry these cleanly.")
+    print("\nNOTE: IR-O-U-0487 (Tamil Nadu Veterinary University) is in this list,")
+    print("but if its affilname in af_id_candidates_confirmed.csv is still the old")
+    print("broken one, retrying will just get 0 again -- fix that name first.")
 
 
 if __name__ == "__main__":
