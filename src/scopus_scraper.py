@@ -29,6 +29,7 @@ Usage:
 
 import argparse
 import csv
+import hashlib
 import json
 import os
 import sys
@@ -144,31 +145,45 @@ def append_rows(path: Path, fieldnames: list, rows: list[dict]):
         writer.writerows(rows)
 
 
+def _is_ceiling_note(note: str) -> bool:
+    """True for both the current 'CEILING: ...' note format and the
+    legacy 'only X/Y retrieved (ceiling or partial failure)' phrasing
+    used before this distinction existed -- rows already written to
+    scopus_yearly_summary.csv from earlier runs use the old phrasing, and
+    must still be recognized as finished, not newly misclassified as
+    needing a pointless retry."""
+    return note.startswith("CEILING:") or "ceiling" in note.lower()
+
+
 def already_done_institute_years() -> set:
     """
-    Only counts an institute-year as done if it completed cleanly (no note).
-    A row with a non-empty `note` means a prior run hit a pagination
-    ceiling or a fetch failure and only got partial data -- that should be
-    retried, not silently treated as finished forever.
+    Counts an institute-year as done (skip entirely, no purge, no retry)
+    if it completed cleanly (no note) OR hit the pagination ceiling --
+    a ceiling result is already the maximum obtainable, so it is treated
+    as finished, not "partial". Only a genuine fetch-failure note (see
+    partial_institute_years below) means real retry is worthwhile.
     """
     done = set()
     if SUMMARY_CSV.exists():
         with open(SUMMARY_CSV, newline="", encoding="utf-8") as f:
             for row in csv.DictReader(f):
-                if not row.get("note", "").strip():
+                note = row.get("note", "").strip()
+                if not note or _is_ceiling_note(note):
                     done.add((row["institute_id"], row["year"]))
     return done
 
 
 def partial_institute_years() -> set:
-    """(institute_id, year) pairs that exist but have a non-empty note --
-    i.e. a previous run only got partial data for them and they need a
-    clean retry, not a silent skip."""
+    """(institute_id, year) pairs that exist but have a genuine
+    fetch-failure note -- these need a clean, purged retry. Ceiling rows
+    (current or legacy phrasing) are deliberately excluded here: retrying
+    them wastes time for an identical result every time."""
     partial = set()
     if SUMMARY_CSV.exists():
         with open(SUMMARY_CSV, newline="", encoding="utf-8") as f:
             for row in csv.DictReader(f):
-                if row.get("note", "").strip():
+                note = row.get("note", "").strip()
+                if note and not _is_ceiling_note(note):
                     partial.add((row["institute_id"], str(row["year"])))
     return partial
 
@@ -211,7 +226,15 @@ def pull_institute_year(institute_id: str, affilname: str, year: int):
     fetch_failed = False
 
     while True:
-        cache_key = f"{institute_id}_{year}_{start}"
+        # Include a short hash of the affilname in the cache key -- NOT
+        # just institute_id/year/page. Without this, correcting a wrong
+        # affilname and retrying would silently return the OLD cached
+        # response from the wrong name's query, since institute_id and
+        # year alone don't change when only the search name is fixed.
+        # This is exactly what caused NMIMS and Mahatma Gandhi University
+        # to still show 0 results after their names were corrected.
+        name_hash = hashlib.md5(affilname.encode("utf-8")).hexdigest()[:8]
+        cache_key = f"{institute_id}_{year}_{name_hash}_{start}"
         data = fetch_page(affilname, year, start, cache_key)
         if data is None:
             fetch_failed = True
@@ -258,7 +281,13 @@ def pull_institute_year(institute_id: str, affilname: str, year: int):
         note = (f"fetch failed at start={start} -- only {len(doc_rows)}"
                 f"/{total_results if total_results is not None else '?'} retrieved, needs retry")
     elif total_results and total_results > len(doc_rows):
-        note = f"only {len(doc_rows)}/{total_results} retrieved (ceiling or partial failure)"
+        # Hit Scopus's offset-pagination ceiling (RESULT_WINDOW_CEILING),
+        # not a failure. This is the maximum obtainable via this API --
+        # retrying will always produce the exact same result, so this is
+        # marked CEILING (not a generic "partial") specifically so
+        # already_done_institute_years() below treats it as finished
+        # rather than something to keep retrying forever.
+        note = f"CEILING: retrieved {len(doc_rows)}/{total_results} (Scopus pagination limit, not retryable)"
 
     append_rows(SUMMARY_CSV, SUMMARY_FIELDS, [{
         "institute_id": institute_id, "year": year,
