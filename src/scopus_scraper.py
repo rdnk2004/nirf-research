@@ -237,7 +237,12 @@ def main(years: list[int], affiliation_csv: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--years", type=int, nargs="+", required=True)
-    parser.add_argument("--affiliations", default="output/af_id_candidates.csv",
+    default_csv = (
+        "output/af_id_candidates_confirmed.csv"
+        if Path("output/af_id_candidates_confirmed.csv").exists()
+        else "output/af_id_candidates.csv"
+    )
+    parser.add_argument("--affiliations", default=default_csv,
                          help="Path to the confirmed AF-ID CSV")
     args = parser.parse_args()
     main(args.years, args.affiliations)
