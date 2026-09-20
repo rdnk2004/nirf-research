@@ -23,8 +23,8 @@ USAGE
     python nirf_scraper.py --years 2017 2018 2019 2020 2021 2022 2023 2024 2025 --category University
 
 Output
-    output/nirf_university_raw.csv      -- one row per institution per year
-    output/parse_failures.log           -- anything that didn't parse cleanly
+    data/pipeline/nirf_university_raw.csv      -- one row per institution per year
+    data/pipeline/parse_failures.log           -- anything that didn't parse cleanly
     cache/html/...                      -- cached listing pages
     cache/pdf/...                       -- cached institution PDFs
 
@@ -70,7 +70,7 @@ USER_AGENT = (
 CACHE_DIR = Path("cache")
 HTML_CACHE = CACHE_DIR / "html"
 PDF_CACHE = CACHE_DIR / "pdf"
-OUTPUT_DIR = Path("output")
+OUTPUT_DIR = Path("data/pipeline")
 CSV_PATH = OUTPUT_DIR / "nirf_university_raw.csv"
 FAIL_LOG_PATH = OUTPUT_DIR / "parse_failures.log"
 

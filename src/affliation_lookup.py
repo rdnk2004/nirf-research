@@ -33,7 +33,7 @@ Input:
     -- e.g. your cleaned NIRF output, nirf_university_raw_clean.csv
 
 Output:
-    output/af_id_candidates.csv -- one row per candidate, grouped by
+    data/reference/af_id_candidates.csv -- one row per candidate, grouped by
     institute_id, with a blank `confirmed` column for you to fill in
     (put "yes" in the row you're confirming as correct).
 
@@ -54,7 +54,7 @@ load_dotenv()
 API_KEY = os.getenv("SCOPUS_API_KEY")
 INST_TOKEN = os.getenv("SCOPUS_INST_TOKEN") or None
 BASE_DELAY = 1.0
-OUTPUT_PATH = "output/af_id_candidates.csv"
+OUTPUT_PATH = "data/reference/af_id_candidates.csv"
 
 HEADERS = {"X-ELS-APIKey": API_KEY, "Accept": "application/json"}
 if INST_TOKEN:
@@ -144,7 +144,7 @@ def main(input_csv: str):
         for row in reader:
             institutions[row["institute_id"]] = row[name_col]
 
-    os.makedirs("output", exist_ok=True)
+    os.makedirs("data/reference", exist_ok=True)
     rows_out = []
 
     for i, (institute_id, name) in enumerate(institutions.items(), 1):

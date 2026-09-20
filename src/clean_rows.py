@@ -31,9 +31,9 @@ Usage:
 import csv
 from pathlib import Path
 
-SUMMARY_CSV = Path("output/scopus_yearly_summary.csv")
-DOCS_CSV = Path("output/scopus_raw_documents.csv")
-FAIL_LOG = Path("output/scopus_failures.log")
+SUMMARY_CSV = Path("data/pipeline/scopus_yearly_summary.csv")
+DOCS_CSV = Path("data/pipeline/scopus_raw_documents.csv")
+FAIL_LOG = Path("data/pipeline/scopus_failures.log")
 
 
 def find_failed_institute_years() -> set:
