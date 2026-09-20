@@ -1,1 +1,2 @@
-output/scopus_raw_documents.csv filter=lfs diff=lfs merge=lfs -text
+data/pipeline/scopus_raw_documents.csv filter=lfs diff=lfs merge=lfs -text
+data/reference/scimagojr-*.csv filter=lfs diff=lfs merge=lfs -text
