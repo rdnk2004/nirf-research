@@ -109,6 +109,7 @@ LISTING_FIELDS = [
 PDF_FIELDS = [
     "faculty_count",
     "total_student_strength", "student_strength_breakdown",
+    "total_graduating", "total_placed", "total_higher_studies", "placement_rate_pct",
     "phd_fulltime_current", "phd_parttime_current",
     "phd_graduated_fulltime_y1", "phd_graduated_parttime_y1",
     "phd_graduated_fulltime_y2", "phd_graduated_parttime_y2",
@@ -367,6 +368,60 @@ def extract_student_strength(pdf) -> tuple:
     return None, {}
 
 
+def extract_placement(pdf) -> dict:
+    """
+    Sums graduating/placed/higher-studies counts across every program-level
+    placement table (UG-3yr, UG-4yr, PG-2yr, etc. -- how many exist varies
+    per institution). Two header variants exist in the wild (with and
+    without lateral-entry columns), so columns are located by matching
+    header text, not fixed position.
+
+    For each program table, only the MOST RECENT cohort row is used (the
+    table reports the last 3 graduating cohorts; the latest is the most
+    relevant for a "current status" snapshot).
+
+    Deliberately sums raw counts first and computes one overall rate from
+    those sums, rather than averaging each program's own rate -- averaging
+    percentages would give a tiny 5-student program equal weight to an
+    800-student one.
+    """
+    total_grad = total_placed = total_hs = 0
+    tables_found = 0
+    for page in pdf.pages:
+        for table in page.extract_tables():
+            if not table or not table[0]:
+                continue
+            header = table[0]
+            header_text = " ".join(h or "" for h in header)
+            if "placed" not in header_text.lower() or "graduating" not in header_text.lower():
+                continue
+            grad_idx = next((i for i, h in enumerate(header) if h and "graduating in" in h.lower()), None)
+            placed_idx = next((i for i, h in enumerate(header) if h and "placed" in h.lower() and "salary" not in h.lower()), None)
+            hs_idx = next((i for i, h in enumerate(header) if h and "higher" in h.lower() and "studies" in h.lower()), None)
+            if grad_idx is None or placed_idx is None:
+                continue
+            data_rows = [r for r in table[1:]
+                         if len(r) > max(grad_idx, placed_idx) and r[grad_idx] and r[grad_idx].strip().isdigit()]
+            if not data_rows:
+                continue
+            last_row = data_rows[-1]  # most recent graduating cohort in this program's table
+            grad = int(last_row[grad_idx])
+            placed = int(last_row[placed_idx]) if last_row[placed_idx] and last_row[placed_idx].strip().isdigit() else 0
+            hs = (int(last_row[hs_idx])
+                  if hs_idx is not None and len(last_row) > hs_idx
+                  and last_row[hs_idx] and last_row[hs_idx].strip().isdigit() else 0)
+            total_grad += grad
+            total_placed += placed
+            total_hs += hs
+            tables_found += 1
+    if tables_found == 0:
+        return {"total_graduating": None, "total_placed": None,
+                "total_higher_studies": None, "placement_rate_pct": None}
+    rate = round(total_placed / total_grad * 100, 1) if total_grad else None
+    return {"total_graduating": total_grad, "total_placed": total_placed,
+            "total_higher_studies": total_hs, "placement_rate_pct": rate}
+
+
 def parse_institution_pdf(pdf_path: Path) -> dict:
     """
     Extract the fields we care about from one institution's raw-data PDF.
@@ -387,6 +442,7 @@ def parse_institution_pdf(pdf_path: Path) -> dict:
             if total_students is not None:
                 result["total_student_strength"] = total_students
                 result["student_strength_breakdown"] = json.dumps(breakdown)
+            result.update(extract_placement(pdf))
     except Exception as e:
         result["parse_status"] = f"pdf_open_failed: {e}"
         return result
