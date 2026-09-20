@@ -6,7 +6,7 @@ bug. This does NOT touch institute_id (already consistent) -- it only adds
 a clean display-name column for labeling tables/charts.
 
 Usage:
-    python3 clean_institution_names.py output/nirf_university_raw.csv
+    python3 clean_institution_names.py data/pipeline/nirf_university_raw.csv
 """
 import csv
 import sys
@@ -54,4 +54,4 @@ def main(path: str):
             print(f"  {iid}: canonical = '{canon_map[iid]}'  |  variants seen: {uniq}")
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else "output/nirf_university_raw.csv")
+    main(sys.argv[1] if len(sys.argv) > 1 else "data/pipeline/nirf_university_raw.csv")

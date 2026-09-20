@@ -8,7 +8,7 @@ and writes incrementally so a crash or quota exhaustion partway through
 doesn't lose completed work.
 
 Input:
-    output/af_id_candidates.csv, after you've manually put "yes" in the
+    data/reference/af_id_candidates_confirmed.csv, after you've manually put "yes" in the
     `confirmed` column for the correct affilname per institution (see
     affiliation_lookup.py's output). Despite the filename, this holds
     affilname strings, not numeric AF-IDs -- Scopus's numeric AF-ID isn't
@@ -17,11 +17,11 @@ Input:
     Scopus affiliation-name string instead (AFFIL("...") queries).
 
 Output:
-    output/scopus_raw_documents.csv   -- one row per paper
-    output/scopus_yearly_summary.csv  -- one row per institution-year:
+    data/pipeline/scopus_raw_documents.csv   -- one row per paper
+    data/pipeline/scopus_yearly_summary.csv  -- one row per institution-year:
                                           total_documents, total_citations,
                                           avg_citations_per_doc
-    output/scopus_failures.log
+    data/pipeline/scopus_failures.log
 
 Usage:
     python3 scopus_scraper.py --years 2021 2022 2023 2024 2025
@@ -48,7 +48,7 @@ PAGE_SIZE = 25  # conservative default for STANDARD view; raise if your tier all
 RESULT_WINDOW_CEILING = 5000  # Scopus's typical offset-pagination ceiling
 
 CACHE_DIR = Path("cache/scopus")
-OUTPUT_DIR = Path("output")
+OUTPUT_DIR = Path("data/pipeline")
 DOCS_CSV = OUTPUT_DIR / "scopus_raw_documents.csv"
 SUMMARY_CSV = OUTPUT_DIR / "scopus_yearly_summary.csv"
 FAIL_LOG = OUTPUT_DIR / "scopus_failures.log"
@@ -340,7 +340,7 @@ def main(years: list[int], affiliation_csv: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--years", type=int, nargs="+", required=True)
-    parser.add_argument("--affiliations", default="output/af_id_candidates.csv",
+    parser.add_argument("--affiliations", default="data/reference/af_id_candidates_confirmed.csv",
                          help="Path to the confirmed AF-ID CSV")
     args = parser.parse_args()
     main(args.years, args.affiliations)
