@@ -290,7 +290,12 @@ def run_subgroup_regressions(df: pd.DataFrame) -> pd.DataFrame:
     m_t2_res._time_effects = True
 
     # 2. Model A2 (Student Placement): placement_rate_pct
-    x_plc = ["faculty_per_100_students", "higher_studies_rate_pct", "ln_total_students"]
+    # NOTE: higher_studies_rate_pct removed as a predictor -- it shares
+    # the same total_graduating denominator as placement_rate_pct, so it
+    # was predicting placement with a mechanically related variable
+    # rather than a genuinely independent one. See
+    # run_model_a2_placement's docstring in option_a_regression.py.
+    x_plc = ["faculty_per_100_students", "ln_total_students"]
 
     m_all_plc = PanelOLS(df_p["placement_rate_pct"], df_p[x_plc], entity_effects=True, time_effects=True).fit(
         cov_type="clustered", cluster_entity=True

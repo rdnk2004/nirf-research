@@ -1,29 +1,23 @@
 Variable,(1) Pooled OLS,(2) Random Effects,(3) Entity FE,(4) Two-Way FE,(5) Lagged TWFE (t-1)
-faculty_per_100_students,"0.5307***
-(0.1135)","0.4961***
-(0.1703)","0.9864
-(0.6597)","0.5644
-(0.7414)",-
-higher_studies_rate_pct,"-0.5705***
-(0.1305)","-0.3068**
-(0.1393)","-0.2313
-(0.1695)","-0.2887
-(0.1824)","-0.2771
-(0.1952)"
-lag_faculty_per_100_students,-,-,-,-,"1.3043
-(0.7919)"
-lag_ln_total_students,-,-,-,-,"1.0025
-(6.5231)"
-ln_total_students,"10.1675***
-(2.8121)","12.4115***
-(2.8666)","22.8638***
-(8.4111)","1.1626
-(10.3824)",-
-const,"-29.2938
-(26.7349)","-54.1221**
-(26.7806)",-,-,-
+faculty_per_100_students,"0.3155***
+(0.1113)","0.4818**
+(0.1992)","1.2018
+(0.7762)","0.8484
+(0.9141)",-
+lag_faculty_per_100_students,-,-,-,-,"1.6358
+(1.0475)"
+lag_ln_total_students,-,-,-,-,"2.8257
+(7.0350)"
+ln_total_students,"9.2483***
+(3.0200)","12.6654***
+(3.0336)","24.2662***
+(8.2735)","4.1923
+(10.9552)",-
+const,"-30.0540
+(27.8782)","-62.2012**
+(27.6631)",-,-,-
 Observations,350,350,350,350,280
-R-squared,0.2124,0.1021,0.0883,0.0626,0.0930
+R-squared,0.0948,0.0547,0.0601,0.0087,0.0383
 Entity Effects,No,No,Yes,Yes,Yes
 Time/Year Effects,No,No,No,Yes,Yes
 Covariance,Clustered (Entity),Clustered (Entity),Clustered (Entity),Clustered (Entity),Clustered (Entity)

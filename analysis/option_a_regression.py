@@ -279,12 +279,22 @@ def run_model_a1_research(df: pd.DataFrame) -> tuple[pd.DataFrame, str]:
 def run_model_a2_placement(df: pd.DataFrame) -> tuple[pd.DataFrame, str]:
     """Model A2: Student Placement Outcome Model
     Target: placement_rate_pct (0 to 100)
-    Explanatory: Faculty per 100 students, Higher studies rate, controls.
+    Explanatory: Faculty per 100 students, controls.
+
+    NOTE: higher_studies_rate_pct was removed from the RHS here (an
+    earlier version used it as a predictor). placement_rate_pct and
+    higher_studies_rate_pct are both computed from the SAME
+    total_graduating denominator -- a student going to higher studies
+    is, near-mechanically, a student not counted as "placed". Using one
+    to predict the other risked reporting an arithmetic artifact as a
+    causal finding. They are now modeled as two PARALLEL outcomes (see
+    run_model_a2b_higher_studies below), both driven by the same
+    explanatory variables, rather than one predicting the other.
     """
     pdata = df.set_index(["institute_id", "year"])
 
     y_var = "placement_rate_pct"
-    x_vars = ["faculty_per_100_students", "higher_studies_rate_pct", "ln_total_students"]
+    x_vars = ["faculty_per_100_students", "ln_total_students"]
     x_vars_const = ["const"] + x_vars
 
     # 1. Pooled OLS
@@ -312,7 +322,7 @@ def run_model_a2_placement(df: pd.DataFrame) -> tuple[pd.DataFrame, str]:
     m4._time_effects = True
 
     # 5. Lagged Two-Way Fixed Effects (Inputs at t-1)
-    lag_x_vars = ["lag_faculty_per_100_students", "higher_studies_rate_pct", "lag_ln_total_students"]
+    lag_x_vars = ["lag_faculty_per_100_students", "lag_ln_total_students"]
     pdata_lag = pdata[[y_var] + lag_x_vars].dropna()
     m5 = PanelOLS(pdata_lag[y_var], pdata_lag[lag_x_vars], entity_effects=True, time_effects=True).fit(
         cov_type="clustered", cluster_entity=True
@@ -333,6 +343,63 @@ def run_model_a2_placement(df: pd.DataFrame) -> tuple[pd.DataFrame, str]:
     }
     table = format_panel_results(models)
     table.to_csv(OUTPUT_DIR / "part_a_table4_model_a2_placement.csv", index=False)
+    return table, hausman_text
+
+
+def run_model_a2b_higher_studies(df: pd.DataFrame) -> tuple[pd.DataFrame, str]:
+    """Model A2b: Higher-Studies Rate Outcome Model (parallel to Model A2)
+    Target: higher_studies_rate_pct (0 to 100)
+    Explanatory: SAME variables as Model A2 (faculty_per_100_students,
+    ln_total_students), so the two post-graduation paths (placed vs.
+    higher studies) are modeled as parallel outcomes of the same
+    teaching-resource inputs, rather than one predicting the other.
+    """
+    pdata = df.set_index(["institute_id", "year"])
+
+    y_var = "higher_studies_rate_pct"
+    x_vars = ["faculty_per_100_students", "ln_total_students"]
+    x_vars_const = ["const"] + x_vars
+
+    m1 = PooledOLS(pdata[y_var], pdata[x_vars_const]).fit(cov_type="clustered", cluster_entity=True)
+    m1._entity_effects = False
+    m1._time_effects = False
+
+    m2 = RandomEffects(pdata[y_var], pdata[x_vars_const]).fit(cov_type="clustered", cluster_entity=True)
+    m2._entity_effects = False
+    m2._time_effects = False
+
+    m3 = PanelOLS(pdata[y_var], pdata[x_vars], entity_effects=True, time_effects=False).fit(
+        cov_type="clustered", cluster_entity=True
+    )
+    m3._entity_effects = True
+    m3._time_effects = False
+
+    m4 = PanelOLS(pdata[y_var], pdata[x_vars], entity_effects=True, time_effects=True).fit(
+        cov_type="clustered", cluster_entity=True
+    )
+    m4._entity_effects = True
+    m4._time_effects = True
+
+    lag_x_vars = ["lag_faculty_per_100_students", "lag_ln_total_students"]
+    pdata_lag = pdata[[y_var] + lag_x_vars].dropna()
+    m5 = PanelOLS(pdata_lag[y_var], pdata_lag[lag_x_vars], entity_effects=True, time_effects=True).fit(
+        cov_type="clustered", cluster_entity=True
+    )
+    m5._entity_effects = True
+    m5._time_effects = True
+
+    h_stat, h_pval, h_df = perform_hausman_test(m3, m2)
+    hausman_text = f"Hausman Test (Model 3 FE vs. Model 2 RE): Chi2({h_df}) = {h_stat:.3f}, p-value = {h_pval:.4e}"
+
+    models = {
+        "(1) Pooled OLS": m1,
+        "(2) Random Effects": m2,
+        "(3) Entity FE": m3,
+        "(4) Two-Way FE": m4,
+        "(5) Lagged TWFE (t-1)": m5,
+    }
+    table = format_panel_results(models)
+    table.to_csv(OUTPUT_DIR / "part_a_table4b_model_a2b_higher_studies.csv", index=False)
     return table, hausman_text
 
 
@@ -368,6 +435,13 @@ def main():
     t4, h2_text = run_model_a2_placement(df)
     print(t4.to_string(index=False))
     print(f"\nDiagnostics: {h2_text}")
+
+    # 4b. Model A2b: Higher Studies Rate (parallel outcome to A2, not a
+    # predictor of it -- see run_model_a2_placement docstring)
+    print("\n--- Estimating Model A2b: Higher Studies Rate (%) [parallel outcome to A2] ---")
+    t4b, h2b_text = run_model_a2b_higher_studies(df)
+    print(t4b.to_string(index=False))
+    print(f"\nDiagnostics: {h2b_text}")
 
     print("\n" + "=" * 80)
     print("Part A estimation complete. Results exported to analysis/results/")
