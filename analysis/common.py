@@ -10,7 +10,7 @@ Loads the merged panel dataset and provides common transformations:
 import pandas as pd
 from pathlib import Path
 
-DATA_PATH = Path("data/final/merged_analysis_dataset.csv")
+DATA_PATH = Path(__file__).resolve().parent.parent / "data/final/merged_analysis_dataset.csv"
 
 
 def load_panel() -> pd.DataFrame:
