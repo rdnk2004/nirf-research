@@ -1,0 +1,26 @@
+Variable,Target: % Q1 (Elite),Target: % Q1 + Q2 (High Tier),Target: % Q4 (Bottom Tier),Target: % Q3 + Q4 (Lower Half)
+faculty_per_100_students,"-0.4997
+(0.3799)","-0.5093
+(0.4632)","-0.3071
+(0.2442)","0.5267
+(0.4787)"
+ln_phd_scholars,"4.2362***
+(1.6086)","3.6798**
+(1.8350)","-1.6592
+(1.0694)","-3.1949*
+(1.7007)"
+ln_scopus_docs,"3.7854**
+(1.8899)","6.6339***
+(1.6938)","0.7680
+(0.8103)","-5.3580***
+(1.5766)"
+ln_sponsored_amount,"-1.2539**
+(0.5391)","-1.2751*
+(0.7026)","0.9091*
+(0.5081)","1.2821*
+(0.6876)"
+Observations,350,350,350,350
+R-squared,0.1338,0.1962,0.0445,0.1330
+Entity Effects,Yes,Yes,Yes,Yes
+Time/Year Effects,Yes,Yes,Yes,Yes
+Covariance,Clustered (Entity),Clustered (Entity),Clustered (Entity),Clustered (Entity)

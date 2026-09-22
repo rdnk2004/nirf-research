@@ -1,0 +1,26 @@
+Variable,% Q1: Tier 1 (1-35),% Q1: Tier 2 (36-70),% Q4: Tier 1 (1-35),% Q4: Tier 2 (36-70)
+faculty_per_100_students,"0.2760
+(0.2781)","-0.7655*
+(0.4112)","-0.3090**
+(0.1420)","-0.3434
+(0.4264)"
+ln_phd_scholars,"6.9664**
+(2.6914)","2.8776**
+(1.3827)","-3.2754**
+(1.5681)","-0.6607
+(1.3515)"
+ln_scopus_docs,"1.8055***
+(0.6011)","6.7257**
+(2.8114)","0.6215
+(0.5234)","1.4989
+(2.0244)"
+ln_sponsored_amount,"-0.5142
+(0.7059)","-1.6211**
+(0.7901)","-0.2244
+(0.4849)","2.0578***
+(0.6487)"
+Observations,170,180,170,180
+R-squared,0.0688,0.3509,0.1135,0.0810
+Entity Effects,Yes,Yes,Yes,Yes
+Time/Year Effects,Yes,Yes,Yes,Yes
+Covariance,Clustered (Entity),Clustered (Entity),Clustered (Entity),Clustered (Entity)
