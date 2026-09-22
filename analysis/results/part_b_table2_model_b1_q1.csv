@@ -1,0 +1,36 @@
+Variable,(1) Pooled OLS,(2) Random Effects,(3) Entity FE,(4) Two-Way FE,(5) Lagged TWFE (t-1)
+faculty_per_100_students,"0.2313**
+(0.1002)","0.1937**
+(0.0816)","-0.5126
+(0.3249)","-0.4997
+(0.3799)","0.0938
+(0.3685)"
+lag_ln_phd_scholars,-,-,-,-,"-0.9607
+(1.1589)"
+lag_ln_scopus_docs,-,-,-,-,"12.8053***
+(2.5986)"
+lag_ln_sponsored_amount,-,-,-,-,"0.2214
+(0.6267)"
+ln_phd_scholars,"1.4561
+(1.2187)","3.2692***
+(0.9985)","4.5968***
+(1.4682)","4.2362***
+(1.6086)",-
+ln_scopus_docs,"2.9384***
+(0.7945)","3.5327***
+(1.1406)","4.1026**
+(1.8584)","3.7854**
+(1.8899)",-
+ln_sponsored_amount,"0.7593
+(0.8522)","-0.5127
+(0.4460)","-1.1731**
+(0.5105)","-1.2539**
+(0.5391)",-
+const,"-10.7588
+(14.8805)","-2.1006
+(9.4975)",-,-,-
+Observations,350,350,350,350,280
+R-squared,0.2452,0.1717,0.1738,0.1338,0.6550
+Entity Effects,No,No,Yes,Yes,Yes
+Time/Year Effects,No,No,No,Yes,Yes
+Covariance,Clustered (Entity),Clustered (Entity),Clustered (Entity),Clustered (Entity),Clustered (Entity)
