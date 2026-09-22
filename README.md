@@ -1,10 +1,10 @@
-# NIRF Research Data Pipeline
+# NIRF Research Data Pipeline & Empirical Analysis
 
-Data collection and preparation for a panel study on how India's National
-Institutional Ranking Framework (NIRF) affects university research output
-and quality.
+> 📊 **Full Empirical Report & Findings**: See [**`RESEARCH_RESULTS.md`**](file:///d:/nirf-scraper/RESEARCH_RESULTS.md) for the complete paper writeup, regression tables, econometric models, and publication figures.
 
-**Panel**: 70 universities × 5 years (2021–2025) = 350 observations.
+Data collection, pipeline engineering, and empirical panel analysis evaluating how India's National Institutional Ranking Framework (NIRF) affects university research output, journal quality, and student placement outcomes.
+
+**Panel Scope**: 70 universities × 5 years (2021–2025) = 350 balanced panel observations.
 
 ## Two research questions
 
