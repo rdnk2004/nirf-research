@@ -39,10 +39,10 @@ plt.rcParams["axes.linewidth"] = 0.8
 
 
 def assign_rank_tiers(df: pd.DataFrame) -> pd.DataFrame:
-    """Assign institutions to Tier 1 (Rank 1-35) or Tier 2 (Rank 36-70) based on 5-year median rank."""
+    """Assign institutions to Tier 1 (Rank 1-35) or Tier 2 (Rank 36-70) based on baseline (2021) rank."""
     df = df.copy()
-    median_rank = df.groupby("institute_id")["rank"].median()
-    tier_map = {iid: ("Tier 1 (Rank 1-35)" if r <= 35 else "Tier 2 (Rank 36-70)") for iid, r in median_rank.items()}
+    rank_2021 = df[df["year"] == 2021].set_index("institute_id")["rank"]
+    tier_map = {iid: ("Tier 1 (Rank 1-35)" if r <= 35 else "Tier 2 (Rank 36-70)") for iid, r in rank_2021.items()}
     df["tier"] = df["institute_id"].map(tier_map)
     return df
 
