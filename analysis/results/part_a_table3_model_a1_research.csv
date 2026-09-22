@@ -32,6 +32,7 @@ const,"-3.3656
 (1.6376)",-,-,-
 Observations,350,350,350,350,280
 R-squared,0.3309,0.1777,0.1502,0.0707,0.0892
+R-squared (Within),0.1088,0.1310,0.1502,0.1265,0.1660
 Entity Effects,No,No,Yes,Yes,Yes
 Time/Year Effects,No,No,No,Yes,Yes
 Covariance,Clustered (Entity),Clustered (Entity),Clustered (Entity),Clustered (Entity),Clustered (Entity)

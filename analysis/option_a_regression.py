@@ -20,6 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import numpy as np
 import pandas as pd
 from scipy import stats
+import statsmodels.api as sm
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from linearmodels.panel import PanelOLS, RandomEffects, PooledOLS
 
@@ -59,6 +60,11 @@ def prepare_part_a_data(df: pd.DataFrame) -> pd.DataFrame:
         0.0
     ).clip(0, 100)
 
+    # Cast quartile columns to numeric if available (keep NaNs so sums and counts are strictly accurate)
+    for q in ["pct_q1", "pct_q2", "pct_q3", "pct_q4", "quartile_match_rate_pct"]:
+        if q in df.columns:
+            df[q] = pd.to_numeric(df[q], errors="coerce")
+
     # 4. Construct 1-year lags (within each institution)
     lag_cols = [
         "faculty_per_100_students",
@@ -88,6 +94,11 @@ def compute_descriptive_stats(df: pd.DataFrame) -> pd.DataFrame:
         ("sponsored_amount_y1", "Sponsored Research Funding (INR)"),
         ("ln_sponsored_amount", "ln(Sponsored Research Funding + 1)"),
         ("higher_studies_rate_pct", "Higher Studies Rate (%)"),
+        ("pct_q1", "% Q1 Journals"),
+        ("pct_q2", "% Q2 Journals"),
+        ("pct_q3", "% Q3 Journals"),
+        ("pct_q4", "% Q4 Journals"),
+        ("quartile_match_rate_pct", "Quartile Match Rate (%)"),
     ]
 
     records = []
@@ -143,12 +154,14 @@ def compute_correlation_and_vif(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Data
     corr_matrix = df[corr_cols].corr()
     corr_matrix.to_csv(OUTPUT_DIR / "part_a_table2_correlation_matrix.csv")
 
-    # VIF for Model A1 explanatory variables
+    # Centered VIF for Model A1 explanatory variables (with constant)
     vif_features = ["faculty_per_100_students", "ln_phd_scholars", "ln_total_students", "ln_sponsored_amount"]
     vif_data = df[vif_features].dropna()
+    vif_data_const = sm.add_constant(vif_data)
     vif_records = []
-    for i, col in enumerate(vif_features):
-        val = variance_inflation_factor(vif_data.values, i)
+    for col in vif_features:
+        idx = vif_data_const.columns.get_loc(col)
+        val = variance_inflation_factor(vif_data_const.values, idx)
         vif_records.append({"Variable": col, "VIF": val})
     vif_df = pd.DataFrame(vif_records)
     vif_df.to_csv(OUTPUT_DIR / "part_a_table2_vif.csv", index=False)
@@ -158,24 +171,47 @@ def compute_correlation_and_vif(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Data
 
 def perform_hausman_test(fe_res, re_res) -> tuple[float, float, int]:
     """Perform Hausman specification test comparing Fixed Effects and Random Effects.
+    Uses unadjusted (classical) covariance matrices to satisfy Hausman's (1978) asymptotic
+    efficiency condition Var(b_fe - b_re) = Var(b_fe) - Var(b_re).
     H0: Random Effects is consistent and efficient.
     H1: Fixed Effects is consistent, RE is inconsistent (endogeneity present).
     """
-    common_params = [p for p in fe_res.params.index if p in re_res.params.index and p != "const"]
-    b_fe = fe_res.params[common_params]
-    b_re = re_res.params[common_params]
-    cov_diff = fe_res.cov.loc[common_params, common_params] - re_res.cov.loc[common_params, common_params]
-
-    diff = b_fe - b_re
     try:
+        fe_u = fe_res.model.fit(cov_type="unadjusted")
+        re_u = re_res.model.fit(cov_type="unadjusted")
+        common_params = [p for p in fe_u.params.index if p in re_u.params.index and p != "const"]
+        b_fe = fe_u.params[common_params]
+        b_re = re_u.params[common_params]
+        cov_diff = fe_u.cov.loc[common_params, common_params] - re_u.cov.loc[common_params, common_params]
+
+        diff = b_fe - b_re
         inv_cov_diff = np.linalg.pinv(cov_diff)
         stat = float(diff.T @ inv_cov_diff @ diff)
-        stat = abs(stat)
         df = len(common_params)
         p_val = float(1.0 - stats.chi2.cdf(stat, df))
         return stat, p_val, df
     except Exception:
-        return np.nan, np.nan, len(common_params)
+        return np.nan, np.nan, len(common_params) if "common_params" in locals() else 0
+
+
+def perform_wooldridge_cre_test(pdata: pd.DataFrame, y_var: str, x_vars: list[str]) -> tuple[float, float, int]:
+    """Perform Wooldridge (2010) / Mundlak (1978) Correlated Random Effects robust test.
+    Augments the RE model with entity-level time-means and conducts a Wald test that
+    their coefficients are jointly zero with cluster-robust standard errors.
+    H0: Coefficients on entity time-means are jointly zero (RE is consistent).
+    H1: Significant correlation between unobserved heterogeneity and regressors (FE required).
+    """
+    pdata_sub = pdata.dropna(subset=[y_var] + x_vars).copy()
+    mean_cols = []
+    for col in x_vars:
+        mcol = f"mean_{col}"
+        pdata_sub[mcol] = pdata_sub.groupby(level=0)[col].transform("mean")
+        mean_cols.append(mcol)
+
+    x_all = ["const"] + x_vars + mean_cols
+    re_cre = RandomEffects(pdata_sub[y_var], pdata_sub[x_all]).fit(cov_type="clustered", cluster_entity=True)
+    wald = re_cre.wald_test(formula=" = ".join(mean_cols) + " = 0")
+    return float(wald.stat), float(wald.pval), len(mean_cols)
 
 
 def format_panel_results(models_dict: dict) -> pd.DataFrame:
@@ -208,6 +244,7 @@ def format_panel_results(models_dict: dict) -> pd.DataFrame:
     summary_rows = [
         {"Variable": "Observations", **{name: str(m.nobs) for name, m in models_dict.items()}},
         {"Variable": "R-squared", **{name: f"{m.rsquared:.4f}" for name, m in models_dict.items()}},
+        {"Variable": "R-squared (Within)", **{name: (f"{m.rsquared_within:.4f}" if hasattr(m, "rsquared_within") else "-") for name, m in models_dict.items()}},
         {"Variable": "Entity Effects", **{name: ("Yes" if getattr(m, "_entity_effects", False) else "No") for name, m in models_dict.items()}},
         {"Variable": "Time/Year Effects", **{name: ("Yes" if getattr(m, "_time_effects", False) else "No") for name, m in models_dict.items()}},
         {"Variable": "Covariance", **{name: "Clustered (Entity)" for name in models_dict.keys()}}
@@ -260,9 +297,13 @@ def run_model_a1_research(df: pd.DataFrame) -> tuple[pd.DataFrame, str]:
     m5._entity_effects = True
     m5._time_effects = True
 
-    # Hausman Test
+    # Specification Tests
     h_stat, h_pval, h_df = perform_hausman_test(m3, m2)
-    hausman_text = f"Hausman Test (Model 3 FE vs. Model 2 RE): Chi2({h_df}) = {h_stat:.3f}, p-value = {h_pval:.4e}"
+    w_stat, w_pval, w_df = perform_wooldridge_cre_test(pdata, y_var, x_vars)
+    diag_text = (
+        f"Hausman Test (Unadjusted SEs): Chi2({h_df}) = {h_stat:.3f}, p = {h_pval:.4e} | "
+        f"Wooldridge CRE Test (Cluster-Robust): Chi2({w_df}) = {w_stat:.3f}, p = {w_pval:.4e}"
+    )
 
     models = {
         "(1) Pooled OLS": m1,
@@ -273,7 +314,7 @@ def run_model_a1_research(df: pd.DataFrame) -> tuple[pd.DataFrame, str]:
     }
     table = format_panel_results(models)
     table.to_csv(OUTPUT_DIR / "part_a_table3_model_a1_research.csv", index=False)
-    return table, hausman_text
+    return table, diag_text
 
 
 def run_model_a2_placement(df: pd.DataFrame) -> tuple[pd.DataFrame, str]:
@@ -330,9 +371,13 @@ def run_model_a2_placement(df: pd.DataFrame) -> tuple[pd.DataFrame, str]:
     m5._entity_effects = True
     m5._time_effects = True
 
-    # Hausman Test
+    # Specification Tests
     h_stat, h_pval, h_df = perform_hausman_test(m3, m2)
-    hausman_text = f"Hausman Test (Model 3 FE vs. Model 2 RE): Chi2({h_df}) = {h_stat:.3f}, p-value = {h_pval:.4e}"
+    w_stat, w_pval, w_df = perform_wooldridge_cre_test(pdata, y_var, x_vars)
+    diag_text = (
+        f"Hausman Test (Unadjusted SEs): Chi2({h_df}) = {h_stat:.3f}, p = {h_pval:.4e} | "
+        f"Wooldridge CRE Test (Cluster-Robust): Chi2({w_df}) = {w_stat:.3f}, p = {w_pval:.4e}"
+    )
 
     models = {
         "(1) Pooled OLS": m1,
@@ -343,7 +388,7 @@ def run_model_a2_placement(df: pd.DataFrame) -> tuple[pd.DataFrame, str]:
     }
     table = format_panel_results(models)
     table.to_csv(OUTPUT_DIR / "part_a_table4_model_a2_placement.csv", index=False)
-    return table, hausman_text
+    return table, diag_text
 
 
 def run_model_a2b_higher_studies(df: pd.DataFrame) -> tuple[pd.DataFrame, str]:
@@ -388,8 +433,13 @@ def run_model_a2b_higher_studies(df: pd.DataFrame) -> tuple[pd.DataFrame, str]:
     m5._entity_effects = True
     m5._time_effects = True
 
+    # Specification Tests
     h_stat, h_pval, h_df = perform_hausman_test(m3, m2)
-    hausman_text = f"Hausman Test (Model 3 FE vs. Model 2 RE): Chi2({h_df}) = {h_stat:.3f}, p-value = {h_pval:.4e}"
+    w_stat, w_pval, w_df = perform_wooldridge_cre_test(pdata, y_var, x_vars)
+    diag_text = (
+        f"Hausman Test (Unadjusted SEs): Chi2({h_df}) = {h_stat:.3f}, p = {h_pval:.4e} | "
+        f"Wooldridge CRE Test (Cluster-Robust): Chi2({w_df}) = {w_stat:.3f}, p = {w_pval:.4e}"
+    )
 
     models = {
         "(1) Pooled OLS": m1,
@@ -400,7 +450,7 @@ def run_model_a2b_higher_studies(df: pd.DataFrame) -> tuple[pd.DataFrame, str]:
     }
     table = format_panel_results(models)
     table.to_csv(OUTPUT_DIR / "part_a_table4b_model_a2b_higher_studies.csv", index=False)
-    return table, hausman_text
+    return table, diag_text
 
 
 def main():
