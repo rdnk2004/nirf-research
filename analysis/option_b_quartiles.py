@@ -24,7 +24,7 @@ import seaborn as sns
 from linearmodels.panel import PanelOLS, RandomEffects, PooledOLS
 
 from analysis.common import load_panel
-from analysis.option_a_regression import perform_hausman_test, format_panel_results
+from analysis.option_a_regression import perform_hausman_test, perform_wooldridge_cre_test, format_panel_results
 
 FIGURES_DIR = Path("analysis/results/figures")
 FIGURES_DIR.mkdir(parents=True, exist_ok=True)
@@ -45,15 +45,19 @@ def prepare_part_b_data(df: pd.DataFrame) -> pd.DataFrame:
     df["year"] = df["year"].astype(int)
     df = df.sort_values(["institute_id", "year"]).reset_index(drop=True)
 
-    # 1. Clean quartile columns (handle the single 0-match row cleanly: MGU 2024)
+    # 1. Clean quartile columns (preserve NaNs for rows with 0 matched journal docs e.g. MGU 2024)
     q_cols = ["pct_q1", "pct_q2", "pct_q3", "pct_q4"]
     for col in q_cols:
-        df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0.0)
+        df[col] = pd.to_numeric(df[col], errors="coerce")
 
-    # 2. Composite quality metrics
-    df["pct_q1_q2"] = (df["pct_q1"] + df["pct_q2"]).clip(0, 100)
-    df["pct_q3_q4"] = (df["pct_q3"] + df["pct_q4"]).clip(0, 100)
-    df["q1_to_q4_ratio"] = np.where(df["pct_q4"] > 0, df["pct_q1"] / df["pct_q4"], df["pct_q1"])
+    # 2. Composite quality metrics (NaN preserved if quartiles missing)
+    df["pct_q1_q2"] = np.where(df["pct_q1"].isna(), np.nan, (df["pct_q1"] + df["pct_q2"]).clip(0, 100))
+    df["pct_q3_q4"] = np.where(df["pct_q3"].isna(), np.nan, (df["pct_q3"] + df["pct_q4"]).clip(0, 100))
+    df["q1_to_q4_ratio"] = np.where(
+        df["pct_q4"].isna() | (df["pct_q4"] == 0),
+        np.nan,
+        df["pct_q1"] / df["pct_q4"]
+    )
 
     # 3. Log transformations of inputs & outputs
     df["ln_scopus_docs"] = np.log(df["scopus_total_documents"].clip(lower=1))
@@ -62,15 +66,16 @@ def prepare_part_b_data(df: pd.DataFrame) -> pd.DataFrame:
     df["ln_sponsored_amount"] = np.log((df["sponsored_amount_y1"].fillna(0) + 1))
     df["faculty_per_100_students"] = (df["faculty_count"] / df["total_student_strength"]) * 100.0
 
-    # 4. Rank tier assignment (5-year median rank)
-    median_rank = df.groupby("institute_id")["rank"].median()
-    df["tier"] = df["institute_id"].map(lambda x: "Tier 1 (Rank 1-35)" if median_rank[x] <= 35 else "Tier 2 (Rank 36-70)")
+    # 4. Rank tier assignment: baseline (2021) rank to avoid look-ahead bias
+    rank_2021 = df[df["year"] == 2021].set_index("institute_id")["rank"]
+    tier_map = {iid: ("Tier 1 (Rank 1-35)" if r <= 35 else "Tier 2 (Rank 36-70)") for iid, r in rank_2021.items()}
+    df["tier"] = df["institute_id"].map(tier_map)
 
     # 5. Constant for OLS / RE
     df["const"] = 1.0
 
-    # 6. Lags within institution
-    lag_vars = ["ln_scopus_docs", "pct_q1", "pct_q1_q2", "ln_phd_scholars", "ln_sponsored_amount"]
+    # 6. Lags within institution (including faculty_per_100_students)
+    lag_vars = ["ln_scopus_docs", "pct_q1", "pct_q1_q2", "ln_phd_scholars", "ln_sponsored_amount", "faculty_per_100_students"]
     for v in lag_vars:
         df[f"lag_{v}"] = df.groupby("institute_id")[v].shift(1)
 
@@ -148,28 +153,31 @@ def run_model_b1_q1_regressions(df: pd.DataFrame) -> tuple[pd.DataFrame, str]:
     x_vars = ["ln_scopus_docs", "ln_phd_scholars", "faculty_per_100_students", "ln_sponsored_amount"]
     x_vars_const = ["const"] + x_vars
 
-    m1 = PooledOLS(pdata[y_var], pdata[x_vars_const]).fit(cov_type="clustered", cluster_entity=True)
+    # Drop NaNs for quartile data (e.g. MGU 2024 with 0 matched docs, N=349)
+    pdata_clean = pdata.dropna(subset=[y_var] + x_vars)
+
+    m1 = PooledOLS(pdata_clean[y_var], pdata_clean[x_vars_const]).fit(cov_type="clustered", cluster_entity=True)
     m1._entity_effects = False
     m1._time_effects = False
 
-    m2 = RandomEffects(pdata[y_var], pdata[x_vars_const]).fit(cov_type="clustered", cluster_entity=True)
+    m2 = RandomEffects(pdata_clean[y_var], pdata_clean[x_vars_const]).fit(cov_type="clustered", cluster_entity=True)
     m2._entity_effects = False
     m2._time_effects = False
 
-    m3 = PanelOLS(pdata[y_var], pdata[x_vars], entity_effects=True, time_effects=False).fit(
+    m3 = PanelOLS(pdata_clean[y_var], pdata_clean[x_vars], entity_effects=True, time_effects=False).fit(
         cov_type="clustered", cluster_entity=True
     )
     m3._entity_effects = True
     m3._time_effects = False
 
-    m4 = PanelOLS(pdata[y_var], pdata[x_vars], entity_effects=True, time_effects=True).fit(
+    m4 = PanelOLS(pdata_clean[y_var], pdata_clean[x_vars], entity_effects=True, time_effects=True).fit(
         cov_type="clustered", cluster_entity=True
     )
     m4._entity_effects = True
     m4._time_effects = True
 
-    # 1-year lagged model
-    lag_x_vars = ["lag_ln_scopus_docs", "lag_ln_phd_scholars", "faculty_per_100_students", "lag_ln_sponsored_amount"]
+    # 1-year lagged model (pure lag: all regressors at t-1)
+    lag_x_vars = ["lag_ln_scopus_docs", "lag_ln_phd_scholars", "lag_faculty_per_100_students", "lag_ln_sponsored_amount"]
     pdata_lag = pdata[[y_var] + lag_x_vars].dropna()
     m5 = PanelOLS(pdata_lag[y_var], pdata_lag[lag_x_vars], entity_effects=True, time_effects=True).fit(
         cov_type="clustered", cluster_entity=True
@@ -178,7 +186,11 @@ def run_model_b1_q1_regressions(df: pd.DataFrame) -> tuple[pd.DataFrame, str]:
     m5._time_effects = True
 
     h_stat, h_pval, h_df = perform_hausman_test(m3, m2)
-    hausman_text = f"Hausman Test (Model 3 FE vs. Model 2 RE): Chi2({h_df}) = {h_stat:.3f}, p-value = {h_pval:.4e}"
+    w_stat, w_pval, w_df = perform_wooldridge_cre_test(pdata_clean, y_var, x_vars)
+    diag_text = (
+        f"Hausman Test (Unadjusted SEs): Chi2({h_df}) = {h_stat:.3f}, p = {h_pval:.4e} | "
+        f"Wooldridge CRE Test (Cluster-Robust): Chi2({w_df}) = {w_stat:.3f}, p = {w_pval:.4e}"
+    )
 
     models = {
         "(1) Pooled OLS": m1,
@@ -189,7 +201,7 @@ def run_model_b1_q1_regressions(df: pd.DataFrame) -> tuple[pd.DataFrame, str]:
     }
     table = format_panel_results(models)
     table.to_csv(RESULTS_DIR / "part_b_table2_model_b1_q1.csv", index=False)
-    return table, hausman_text
+    return table, diag_text
 
 
 def run_model_b1b_high_vs_low_regressions(df: pd.DataFrame) -> pd.DataFrame:
@@ -212,7 +224,8 @@ def run_model_b1b_high_vs_low_regressions(df: pd.DataFrame) -> pd.DataFrame:
 
     models = {}
     for target_col, label in targets.items():
-        m = PanelOLS(pdata[target_col], pdata[x_vars], entity_effects=True, time_effects=True).fit(
+        sub = pdata.dropna(subset=[target_col] + x_vars)
+        m = PanelOLS(sub[target_col], sub[x_vars], entity_effects=True, time_effects=True).fit(
             cov_type="clustered", cluster_entity=True
         )
         m._entity_effects = True
@@ -229,8 +242,8 @@ def run_model_b2_subgroup_quality(df: pd.DataFrame) -> pd.DataFrame:
     pdata = df.set_index(["institute_id", "year"])
     x_vars = ["ln_scopus_docs", "ln_phd_scholars", "faculty_per_100_students", "ln_sponsored_amount"]
 
-    pdata_t1 = pdata[pdata["tier"] == "Tier 1 (Rank 1-35)"]
-    pdata_t2 = pdata[pdata["tier"] == "Tier 2 (Rank 36-70)"]
+    pdata_t1 = pdata[pdata["tier"] == "Tier 1 (Rank 1-35)"].dropna(subset=["pct_q1", "pct_q4"] + x_vars)
+    pdata_t2 = pdata[pdata["tier"] == "Tier 2 (Rank 36-70)"].dropna(subset=["pct_q1", "pct_q4"] + x_vars)
 
     m_t1_q1 = PanelOLS(pdata_t1["pct_q1"], pdata_t1[x_vars], entity_effects=True, time_effects=True).fit(
         cov_type="clustered", cluster_entity=True
@@ -370,7 +383,9 @@ def plot_fig7_top_q1_performers(df: pd.DataFrame):
         data=avg_q1,
         x="pct_q1",
         y="short_name",
+        hue="short_name",
         palette="Blues_r",
+        legend=False,
         ax=ax,
         edgecolor="#333333",
         linewidth=0.6
