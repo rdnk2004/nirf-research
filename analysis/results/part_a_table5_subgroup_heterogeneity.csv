@@ -2,14 +2,10 @@ Variable,Research: Full Sample,Research: Tier 1 (1-35),Research: Tier 2 (36-70),
 faculty_per_100_students,"-0.0620
 (0.0497)","-0.0556
 (0.0804)","-0.0811
-(0.0561)","0.5644
-(0.7414)","0.1095
-(0.7919)","1.0382
-(1.1795)"
-higher_studies_rate_pct,-,-,-,"-0.2887
-(0.1824)","-0.3668*
-(0.2180)","-0.1014
-(0.2098)"
+(0.0561)","0.8484
+(0.9141)","0.5858
+(1.2557)","1.0949
+(1.1683)"
 ln_phd_scholars,"0.3215**
 (0.1397)","0.6389***
 (0.2310)","0.1693
@@ -21,12 +17,12 @@ ln_sponsored_amount,"-0.0536
 ln_total_students,"0.0875
 (0.4968)","-0.7556
 (1.2518)","0.1601
-(0.3852)","1.1626
-(10.3824)","-26.5219
-(17.0327)","15.8264
-(11.0673)"
+(0.3852)","4.1923
+(10.9552)","-24.4678
+(16.9351)","16.9763
+(10.9184)"
 Observations,350,170,180,350,170,180
-R-squared,0.0707,0.0839,0.1215,0.0626,0.2217,0.0361
+R-squared,0.0707,0.0839,0.1215,0.0087,0.0834,0.0325
 Entity Effects,Yes,Yes,Yes,Yes,Yes,Yes
 Time/Year Effects,Yes,Yes,Yes,Yes,Yes,Yes
 Covariance,Clustered (Entity),Clustered (Entity),Clustered (Entity),Clustered (Entity),Clustered (Entity),Clustered (Entity)
