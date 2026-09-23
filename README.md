@@ -1,6 +1,6 @@
 # NIRF Research Data Pipeline & Empirical Analysis
 
-> 📊 **Full Empirical Report & Findings**: See [**`RESEARCH_RESULTS.md`**](file:///d:/nirf-scraper/RESEARCH_RESULTS.md) for the complete paper writeup, regression tables, econometric models, and publication figures.
+> 📊 **Full Empirical Report & Findings**: See [**`RESEARCH_RESULTS.md`**](RESEARCH_RESULTS.md) for the complete paper writeup, regression tables, econometric models, and publication figures.
 
 Data collection, pipeline engineering, and empirical panel analysis evaluating how India's National Institutional Ranking Framework (NIRF) affects university research output, journal quality, and student placement outcomes.
 
@@ -13,6 +13,17 @@ Data collection, pipeline engineering, and empirical panel analysis evaluating h
   outcomes?
 - **Option B**: Is the post-NIRF publication surge concentrated in low-quality
   journals (Q3/Q4), or does it reflect genuine high-impact output?
+
+## Headline findings
+
+| # | Finding | Evidence |
+|---|---|---|
+| 1 | PhD scholar base drives research output, not faculty headcount alone | β = 0.32–0.64 (p<0.01), Two-Way FE |
+| 2 | Faculty-student ratio improves placement rate, ~2× stronger in Tier 2 than Tier 1 | β = +0.48 (p<0.05), Random Effects |
+| 3 | "Gaming/dilution" hypothesis is **rejected** — volume growth expands Q1/Q2 share | +6.63pp Q1+Q2, −5.36pp Q3+Q4 (p<0.001) |
+| 4 | PhD scholars are the dual engine of both volume *and* quality | β = +4.24 on %Q1 (p<0.01) |
+
+Full methodology, all 9 regression tables, and all 7 figures: [`RESEARCH_RESULTS.md`](RESEARCH_RESULTS.md).
 
 ## Project structure
 
@@ -42,7 +53,12 @@ src/                                # data pipeline scripts
 └── clean_rows.py                       # failure-log cleanup
 
 analysis/                           # statistical analysis (Python)
+├── common.py                           # shared panel-construction utilities
+├── option_a_regression.py              # Models A1, A2, A2b
+├── part_a_patterns_and_viz.py          # Part A figures + tier heterogeneity
+├── option_b_quartiles.py               # Models B1, B1b, B2 (quartile analysis)
 └── results/                            # generated tables & figures
+    └── figures/                            # 7 publication-ready PNGs (300dpi)
 
 cache/                              # HTTP/PDF/Scopus response cache (gitignored)
 ```
@@ -104,6 +120,17 @@ Defaults to `data/reference/af_id_candidates_confirmed.csv` for affiliations.
 Cached and resumable. Rate-limited (1s delay). Handles Scopus's 5,000-result
 pagination ceiling.
 
+## Analysis scripts
+
+```bash
+python analysis/option_a_regression.py      # Models A1, A2, A2b + tables 1-4b
+python analysis/part_a_patterns_and_viz.py  # Figures 1-4 + tier heterogeneity (table 5)
+python analysis/option_b_quartiles.py       # Models B1, B1b, B2 + tables + figures 5-7
+```
+
+All three read `data/final/merged_analysis_dataset.csv` and write to
+`analysis/results/` (tables as CSV, figures as 300dpi PNG).
+
 ## Known gaps
 
 - **Faculty PhD-qualification rate**: not available from NIRF PDFs (confirmed
@@ -115,6 +142,9 @@ pagination ceiling.
 - **Quartile match rate**: ~75% of documents match to journal ISSNs. The
   unmatched ~25% are non-journal content (conference proceedings, book
   chapters) — confirmed by sampling, not a data-quality issue.
+- **`placement_rate_pct` and `higher_studies_rate_pct`**: share the same
+  `total_graduating` denominator. Do not use one to predict the other in a
+  regression — model them as parallel outcomes (see Models A2 / A2b).
 
 ## Politeness
 
